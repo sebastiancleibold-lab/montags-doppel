@@ -566,7 +566,7 @@ async function load(){
 const STYLE = new URLSearchParams(location.search).get('stil') || CFG.style || '';
 if(STYLE) document.documentElement.dataset.style = STYLE;
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && LIVE && !document.querySelector('.overlay')) load(); });
-if(LIVE && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if(LIVE && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).catch(() => {});
 load();
 </script>
 </body>
