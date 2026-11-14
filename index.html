@@ -20,7 +20,7 @@
   --bg:#f4f6f1; --card:#ffffff; --ink:#1b2419; --muted:#667063; --line:#e2e6dd;
   --accent:#2f6b3a; --accent-ink:#ffffff; --ball:#c9e23b; --win:#2f6b3a; --loss:#b4442e; --draw:#a67c12;
   --soft:#eef3e8; --shadow:0 1px 2px rgba(0,0,0,.05),0 2px 8px rgba(0,0,0,.04);
-  --hdr:var(--accent); --hdr-ink:var(--accent-ink); --fab:var(--ball); --fab-ink:#1b2419; --radius:14px; --fbody:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --fhead:var(--fbody); --hcase:none;
+  --mid:#6d9b72; --hdr:var(--accent); --hdr-ink:var(--accent-ink); --fab:var(--ball); --fab-ink:#1b2419; --radius:14px; --fbody:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --fhead:var(--fbody); --hcase:none;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -36,13 +36,13 @@
 }
 
 /* ---- Stil 1: Sandplatz ---- */
-:root[data-style="sand"]{--bg:#f7efe6;--card:#fffaf4;--ink:#2b1d14;--muted:#8a6f5c;--line:#ecdccb;--accent:#c4562a;--accent-ink:#fff;--ball:#f4f7c8;--win:#2f7a46;--loss:#b23a2a;--draw:#b9811a;--soft:#f5e6d6;
+:root[data-style="sand"]{--mid:#df8a63;--bg:#f7efe6;--card:#fffaf4;--ink:#2b1d14;--muted:#8a6f5c;--line:#ecdccb;--accent:#c4562a;--accent-ink:#fff;--ball:#f4f7c8;--win:#2f7a46;--loss:#b23a2a;--draw:#b9811a;--soft:#f5e6d6;
   --hdr:#c4562a repeating-linear-gradient(90deg,transparent 0 46px,rgba(255,255,255,.13) 46px 48px);--hdr-ink:#fff;--fab:#2b1d14;--fab-ink:#fff;--radius:16px;--fbody:"DM Sans",system-ui,sans-serif;--fhead:"DM Sans",system-ui,sans-serif;color-scheme:light}
 /* ---- Stil 2: Rasen klassisch ---- */
-:root[data-style="rasen"]{--bg:#f5f4ee;--card:#fff;--ink:#1d2b22;--muted:#6b746c;--line:#e2e2d8;--accent:#1f4d2f;--accent-ink:#fff;--ball:#c7b8e3;--win:#1f4d2f;--loss:#9b2c2c;--draw:#8a6d1c;--soft:#eef1e9;
+:root[data-style="rasen"]{--mid:#6f9a78;--bg:#f5f4ee;--card:#fff;--ink:#1d2b22;--muted:#6b746c;--line:#e2e2d8;--accent:#1f4d2f;--accent-ink:#fff;--ball:#c7b8e3;--win:#1f4d2f;--loss:#9b2c2c;--draw:#8a6d1c;--soft:#eef1e9;
   --hdr:#1f4d2f;--hdr-ink:#fff;--fab:#4b2e6e;--fab-ink:#fff;--radius:6px;--fbody:system-ui,-apple-system,"Segoe UI",sans-serif;--fhead:"Playfair Display",Georgia,serif;--shadow:none;color-scheme:light}
 /* ---- Stil 3: Flutlicht ---- */
-:root[data-style="flutlicht"]{--bg:#0c1120;--card:#151c2f;--ink:#eef2ff;--muted:#8d97b5;--line:#253052;--accent:#d7f34a;--accent-ink:#0c1120;--ball:#d7f34a;--win:#d7f34a;--loss:#ff7070;--draw:#ffc94a;--soft:#1c2540;
+:root[data-style="flutlicht"]{--mid:#5d6e2a;--bg:#0c1120;--card:#151c2f;--ink:#eef2ff;--muted:#8d97b5;--line:#253052;--accent:#d7f34a;--accent-ink:#0c1120;--ball:#d7f34a;--win:#d7f34a;--loss:#ff7070;--draw:#ffc94a;--soft:#1c2540;
   --hdr:#0c1120;--hdr-ink:#fff;--fab:#d7f34a;--fab-ink:#0c1120;--radius:18px;--fbody:"Barlow",system-ui,sans-serif;--fhead:"Barlow Condensed",system-ui,sans-serif;--hcase:uppercase;--shadow:none;color-scheme:dark}
 :root[data-style="flutlicht"] header{border-bottom:1px solid var(--line)}
 :root[data-style="flutlicht"] .team.w{color:var(--accent)}
@@ -94,6 +94,22 @@ td.pts{font-weight:700;font-size:18px;font-family:var(--fhead);font-variant-nume
 .day.next .date{background:var(--accent);color:var(--accent-ink)}
 .day.next .date small{color:inherit;opacity:.8}
 .chips{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.day.mine:not(.next) .date{background:var(--mid);color:#fff}
+.day.mine:not(.next) .date small{color:inherit;opacity:.85}
+.resbtn{flex:none;width:40px;height:40px;border-radius:50%;border:1.5px dashed var(--accent);background:transparent;color:var(--accent);font:inherit;font-size:22px;line-height:1;cursor:pointer;align-self:center}
+.resbtn.done{border:0;background:var(--win);color:var(--card);font-size:19px;font-weight:700}
+.dres{width:100%;font-size:13px;color:var(--muted);margin-top:2px}
+.dres b{color:var(--ink);font-weight:600}
+.note{grid-column:1/-1;font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px;margin-top:4px}
+.notice{background:var(--soft);border-left:3px solid var(--win);padding:8px 10px;border-radius:8px;font-size:14px;margin-bottom:4px}
+.gast{margin-top:6px}
+.teams .t select{margin-top:6px;background:var(--card);padding:9px 6px;font-size:15px}
+textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%;resize:vertical}
+.lg{display:block;margin-top:4px}
+.lg i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin:0 4px 0 0}
+.lg .lg-next{background:var(--accent)} .lg .lg-mine{background:var(--mid);margin-left:10px}
+.lg .lg-done{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--win);color:var(--card);font-size:10px;text-align:center;line-height:14px;margin:0 4px 0 10px}
+
 .chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:20px;padding:5px 11px;font:inherit;font-size:14px;cursor:pointer}
 .chip.me{border-color:var(--accent);background:var(--soft);font-weight:700}
 .chip.off{text-decoration:line-through;color:var(--muted);border-style:dashed}
@@ -193,18 +209,20 @@ const Live = {
   },
   async getData(){
     const [ms, sc] = await Promise.all([
-      this.req('matches?select=id,datum,a1,a2,b1,b2,sets&order=datum.asc,created_at.asc'),
+      this.req('matches?select=*&order=datum.asc,created_at.asc'),
       this.req('schedule?select=datum,spieler,abgemeldet&order=datum.asc')
     ]);
     const data = {
-      matches: ms.map(r => ({id: r.id, datum: r.datum, a: [r.a1, r.a2], b: [r.b1, r.b2], sets: r.sets || []})),
+      matches: ms.map(r => ({id: r.id, datum: r.datum, a: [r.a1, r.a2], b: [r.b1, r.b2], sets: r.sets || [], notiz: r.notiz || ''})),
       schedule: sc.map(r => ({datum: r.datum, spieler: r.spieler || [], abgemeldet: r.abgemeldet || []}))
     };
     store.set('cache', data);
     return data;
   },
   async saveMatch(m, p){
-    await this.req('rpc/save_match', {p_pin: p, p_id: m.id || null, p_datum: m.datum, p_a1: m.a[0], p_a2: m.a[1], p_b1: m.b[0], p_b2: m.b[1], p_sets: m.sets});
+    const body = {p_pin: p, p_id: m.id || null, p_datum: m.datum, p_a1: m.a[0], p_a2: m.a[1], p_b1: m.b[0], p_b2: m.b[1], p_sets: m.sets, p_notiz: m.notiz || null};
+    try{ await this.req('rpc/save_match', body); }
+    catch(e){ if(!/save_match|p_notiz|function/i.test(e.message)) throw e; delete body.p_notiz; await this.req('rpc/save_match', body); }
     return this.getData();
   },
   async deleteMatch(id, p){ await this.req('rpc/delete_match', {p_pin: p, p_id: id}); return this.getData(); },
@@ -301,7 +319,7 @@ function matchHTML(m){
   const sets = (side) => `<div class="sets">${m.sets.filter(s => num(s[0])!==null && num(s[1])!==null).map(s => {
     const v = side==='A'?s[0]:s[1], o = side==='A'?s[1]:s[0];
     return `<span class="${v>o?'w':''}">${v}</span>`; }).join('')}</div>`;
-  return `<div class="card match" data-id="${esc(m.id)}">${team(m.a,'A')}${sets('A')}${team(m.b,'B')}${sets('B')}</div>`;
+  return `<div class="card match" data-id="${esc(m.id)}">${team(m.a,'A')}${sets('A')}${team(m.b,'B')}${sets('B')}${m.notiz ? `<div class="note">📝 ${esc(m.notiz)}</div>` : ''}</div>`;
 }
 
 function viewMatches(){
@@ -317,20 +335,25 @@ function viewPlan(){
   const sched = DATA.schedule.slice().sort((a, b) => a.datum.localeCompare(b.datum));
   const next = sched.find(d => d.datum >= today);
   const mine = ME ? sched.filter(d => d.datum >= today && d.spieler.includes(ME)).length : null;
-  return (ME ? `<p class="muted small">${esc(ME)}: noch ${mine} Termin${mine===1?'':'e'} in dieser Saison.</p>` : `<p class="muted small">Wähle oben „Ich bin …“, um deine Termine hervorzuheben. Tippe auf einen Namen zum Abmelden.</p>`)
+  return (ME ? `<p class="muted small">${esc(ME)}: noch ${mine} Termin${mine===1?'':'e'} in dieser Saison. <span class="lg"><i class="lg-next"></i>nächster Termin <i class="lg-mine"></i>deine Termine <span class="lg-done">✓</span>Ergebnis da</span></p>` : `<p class="muted small">Wähle oben „Ich bin …“, um deine Termine hervorzuheben. Tippe auf einen Namen zum Abmelden, auf + zum Eintragen des Ergebnisses.</p>`)
   + sched.map(d => {
     const dt = pd(d.datum);
     const cls = d === next ? 'next' : d.datum < today ? 'past' : '';
     const n = d.spieler.length;
     const reg = SEED.find(s => s[0] === d.datum)?.[1] || [];
-    return `<div class="card day ${cls}" data-date="${d.datum}">
+    const res = resultOf(d.datum)[0];
+    const mineCls = ME && d.spieler.includes(ME) ? 'mine' : '';
+    const sr = res ? shortResult(res) : null;
+    return `<div class="card day ${cls} ${mineCls}" data-date="${d.datum}">
       <div class="date"><small>${WD[dt.getDay()]}</small><b>${dt.getDate()}.</b><small>${MON[dt.getMonth()]}</small></div>
       <div class="chips">
         ${d.spieler.map(p => `<button class="chip ${p===ME?'me':''} ${reg.includes(p)?'':'sub'}" data-act="out" data-p="${esc(p)}">${esc(p)}</button>`).join('')}
         ${d.abgemeldet.map(p => `<button class="chip off" data-act="in" data-p="${esc(p)}">${esc(p)}</button>`).join('')}
         ${n < 4 ? `<button class="chip add" data-act="add">+ Ersatz</button>` : ''}
         ${n < 4 ? `<div class="warn">${4-n} Platz${4-n>1?'e':''} frei, Ersatz gesucht</div>` : ''}
-      </div></div>`;
+        ${sr ? `<div class="dres"><b>${esc(sr.who)}</b> · ${esc(sr.sets)}${res.notiz ? ' · 📝' : ''}</div>` : ''}
+      </div>
+      <button class="resbtn ${res?'done':''}" data-act="result" aria-label="${res?'Ergebnis ansehen oder ändern':'Ergebnis eintragen'}">${res?'✓':'+'}</button></div>`;
   }).join('');
 }
 
@@ -358,24 +381,44 @@ function defaultDate(){
   return past.length ? past[past.length-1] : today;
 }
 
-function matchForm(m){
+const GAST = '__gast__';
+function playerSelect(i, val, day){
+  const sched = day ? day.spieler : [];
+  const rest = allNames().filter(n => !sched.includes(n));
+  const known = !val || sched.includes(val) || rest.includes(val);
+  const opt = n => `<option value="${esc(n)}" ${n===val?'selected':''}>${esc(n)}</option>`;
+  return `<select id="p${i}" class="psel">
+      <option value="" ${!val?'selected':''}>– Spieler wählen –</option>
+      ${sched.length ? `<optgroup label="Eingeteilt">${sched.map(opt).join('')}</optgroup>` : ''}
+      <optgroup label="${sched.length ? 'Weitere Spieler' : 'Spieler'}">${rest.map(opt).join('')}</optgroup>
+      <option value="${GAST}" ${!known?'selected':''}>Gast / anderer Name …</option>
+    </select>
+    <input id="p${i}g" class="gast" placeholder="Name des Gasts" value="${known ? '' : esc(val)}" ${known ? 'hidden' : ''}>`;
+}
+function resultOf(datum){ return DATA.matches.filter(x => x.datum === datum); }
+function shortResult(m){
+  const e = evalMatch(m);
+  const sets = m.sets.filter(s => num(s[0])!==null && num(s[1])!==null).map(s => `${s[0]}:${s[1]}`).join(' ');
+  const who = e.res === 'D' ? 'Unentschieden' : `${(e.res==='A'?m.a:m.b).join(' / ')} gewinnen`;
+  return {sets, who};
+}
+
+function matchForm(m, opts = {}){
+  const datum = m ? m.datum : (opts.datum || defaultDate());
+  if(!m){ const ex = resultOf(datum)[0]; if(ex) m = ex; }
   const isNew = !m;
-  const datum = m ? m.datum : defaultDate();
   const day = DATA.schedule.find(d => d.datum === datum);
   const pre = m ? [...m.a, ...m.b] : (day ? day.spieler.slice(0,4) : []);
   const sets = m ? m.sets : [[null,null],[null,null],[null,null]];
   const v = x => x === null || x === undefined ? '' : x;
   openSheet(`
     <h2>${isNew ? 'Ergebnis eintragen' : 'Ergebnis ändern'}</h2>
+    <div class="notice" id="f-exist" hidden></div>
     <label>Datum</label><input id="f-date" type="date" value="${datum}">
     <label>Paarungen</label>
     <div class="teams">
-      <div class="t"><b>Team A</b>
-        <input list="names" id="p0" value="${esc(pre[0]||'')}" placeholder="Spieler 1">
-        <input list="names" id="p1" value="${esc(pre[1]||'')}" placeholder="Spieler 2"></div>
-      <div class="t"><b>Team B</b>
-        <input list="names" id="p2" value="${esc(pre[2]||'')}" placeholder="Spieler 3">
-        <input list="names" id="p3" value="${esc(pre[3]||'')}" placeholder="Spieler 4"></div>
+      <div class="t"><b>Team A</b><div id="ps0">${playerSelect(0, pre[0], day)}</div><div id="ps1">${playerSelect(1, pre[1], day)}</div></div>
+      <div class="t"><b>Team B</b><div id="ps2">${playerSelect(2, pre[2], day)}</div><div id="ps3">${playerSelect(3, pre[3], day)}</div></div>
     </div>
     <label>Sätze (Team A : Team B)</label>
     <div class="setgrid">
@@ -385,6 +428,8 @@ function matchForm(m){
         <input inputmode="numeric" pattern="[0-9]*" id="s${i}b" value="${v(sets[i]?.[1])}" placeholder="–">`).join('')}
     </div>
     <div class="result" id="f-res"></div>
+    <label>Besondere Vorkommnisse <span style="font-weight:400">(optional)</span></label>
+    <textarea id="f-note" rows="2" maxlength="500" placeholder="z. B. Regen, Verletzung, Zeit war aus …">${esc(m?.notiz || '')}</textarea>
     ${pinField()}
     <div class="err" id="f-err"></div>
     <div class="btns">
@@ -392,40 +437,62 @@ function matchForm(m){
       <button class="btn" id="f-cancel">Abbrechen</button>
       <button class="btn primary" id="f-save">Speichern</button>
     </div>`, (el, close) => {
+      const $$ = s => el.querySelector(s);
+      const save = $$('#f-save');
+      let confirmed = false;
+      const name = i => { const s = $$('#p'+i).value; return s === GAST ? $$('#p'+i+'g').value.trim() : s; };
       const read = () => ({
-        id: m ? m.id : '', datum: el.querySelector('#f-date').value,
-        a: [el.querySelector('#p0').value.trim(), el.querySelector('#p1').value.trim()],
-        b: [el.querySelector('#p2').value.trim(), el.querySelector('#p3').value.trim()],
-        sets: [0,1,2].map(i => [num(el.querySelector(`#s${i}a`).value), num(el.querySelector(`#s${i}b`).value)])
+        id: m ? m.id : '', datum: $$('#f-date').value,
+        a: [name(0), name(1)], b: [name(2), name(3)],
+        sets: [0,1,2].map(i => [num($$(`#s${i}a`).value), num($$(`#s${i}b`).value)]),
+        notiz: $$('#f-note').value.trim()
       });
+      const others = () => resultOf($$('#f-date').value).filter(x => !m || x.id !== m.id);
+      const syncSelects = () => {
+        const chosen = [0,1,2,3].map(i => $$('#p'+i).value);
+        [0,1,2,3].forEach(i => {
+          $$('#p'+i).querySelectorAll('option').forEach(o => { o.disabled = !!o.value && o.value !== GAST && chosen.includes(o.value) && chosen[i] !== o.value; });
+          $$('#p'+i+'g').hidden = chosen[i] !== GAST;
+        });
+      };
       const upd = () => {
         const x = read(), e = evalMatch(x);
-        el.querySelector('#f-res').textContent = !e.res ? 'Noch kein Satz eingetragen'
+        $$('#f-res').textContent = !e.res ? 'Noch kein Satz eingetragen'
           : e.res === 'D' ? `Unentschieden (${e.sa}:${e.sb} Sätze), je 1 Punkt`
           : `Sieg ${(e.res==='A'?x.a:x.b).filter(Boolean).join(' / ') || 'Team '+e.res} (${Math.max(e.sa,e.sb)}:${Math.min(e.sa,e.sb)} Sätze), je 2 Punkte`;
+        const ex = others()[0] || (!isNew ? m : null);
+        const box = $$('#f-exist');
+        if(ex){ const r = shortResult(ex); box.hidden = false; box.innerHTML = `✓ Für diesen Termin ist schon ein Ergebnis eingetragen: <b>${esc(r.who)}</b> ${esc(r.sets)}. Speichern überschreibt es.`; }
+        else box.hidden = true;
+        if(!confirmed) save.textContent = ex ? 'Überschreiben' : 'Speichern';
       };
-      el.querySelectorAll('input').forEach(i => i.addEventListener('input', upd)); upd();
-      el.querySelector('#f-date').addEventListener('change', e => {
-        if(!isNew) return;
+      const bindSelects = () => [0,1,2,3].forEach(i => { $$('#p'+i).addEventListener('change', () => { syncSelects(); upd(); if($$('#p'+i).value === GAST) $$('#p'+i+'g').focus(); }); });
+      el.addEventListener('input', upd); bindSelects(); syncSelects(); upd();
+      $$('#f-date').addEventListener('change', e => {
         const d = DATA.schedule.find(s => s.datum === e.target.value);
-        if(d) d.spieler.slice(0,4).forEach((p, i) => el.querySelector('#p'+i).value = p);
-        upd();
+        const keep = isNew ? (d ? d.spieler.slice(0,4) : [0,1,2,3].map(name)) : [0,1,2,3].map(name);
+        [0,1,2,3].forEach(i => $$('#ps'+i).innerHTML = playerSelect(i, keep[i], d));
+        bindSelects(); syncSelects(); confirmed = false; upd();
       });
-      el.querySelector('#f-cancel').onclick = close;
-      const err = el.querySelector('#f-err');
-      el.querySelector('#f-save').onclick = async e => {
+      $$('#f-cancel').onclick = close;
+      const err = $$('#f-err');
+      save.onclick = async e => {
         const x = read(), ev = evalMatch(x), ps = [...x.a, ...x.b];
         if(!x.datum) return err.textContent = 'Bitte ein Datum wählen.';
-        if(ps.some(p => !p)) return err.textContent = 'Bitte alle vier Spieler eintragen.';
+        if(ps.some(p => !p)) return err.textContent = 'Bitte alle vier Spieler auswählen.';
         if(new Set(ps.map(p => p.toLowerCase())).size < 4) return err.textContent = 'Ein Spieler steht doppelt drin.';
         if(!ev.res) return err.textContent = 'Bitte mindestens einen Satz eintragen.';
         if(x.sets.some(s => (s[0]===null) !== (s[1]===null))) return err.textContent = 'Ein Satz ist nur halb ausgefüllt.';
-        if(await run(e.target, err, pin => api('saveMatch', x, pin))){ close(); toast('Ergebnis gespeichert'); }
+        const dup = others();
+        if((dup.length || !isNew) && !confirmed){ confirmed = true; err.textContent = ''; save.textContent = 'Ja, altes Ergebnis überschreiben'; return; }
+        if(dup.length && !x.id) x.id = dup[0].id;
+        const extra = dup.filter(d => d.id !== x.id);
+        if(await run(save, err, async pin => { let r = await api('saveMatch', x, pin); for(const d of extra) r = await api('deleteMatch', d.id, pin); return r; })){ close(); toast('Ergebnis gespeichert'); }
       };
-      const del = el.querySelector('#f-del');
+      const del = $$('#f-del');
       if(del) del.onclick = async e => {
         if(del.dataset.sure !== '1'){ del.dataset.sure = '1'; del.textContent = 'Wirklich löschen?'; return; }
-        if(await run(e.target, err, pin => api('deleteMatch', m.id, pin))){ close(); toast('Spiel gelöscht'); }
+        if(await run(e.target, err, pin => api('deleteMatch', m.id, pin))){ close(); toast('Ergebnis gelöscht'); }
       };
     });
 }
@@ -466,6 +533,7 @@ $('#fab').onclick = () => matchForm(null);
 $('#main').onclick = e => {
   const st = e.target.closest('.stilbtn'); if(st){ document.documentElement.dataset.style = st.dataset.stil; return render(); }
   const m = e.target.closest('.match'); if(m) return matchForm(DATA.matches.find(x => x.id === m.dataset.id));
+  const rb = e.target.closest('.resbtn'); if(rb) return matchForm(null, {datum: rb.closest('.day').dataset.date});
   const c = e.target.closest('.chip'); if(c) return dayForm(c.closest('.day').dataset.date, c.dataset.act, c.dataset.p);
 };
 
