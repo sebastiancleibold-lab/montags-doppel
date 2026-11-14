@@ -96,8 +96,8 @@ td.pts{font-weight:700;font-size:18px;font-family:var(--fhead);font-variant-nume
 .chips{display:flex;flex-wrap:wrap;gap:6px;flex:1}
 .day.mine:not(.next) .date{background:var(--mid);color:#fff}
 .day.mine:not(.next) .date small{color:inherit;opacity:.85}
-.resbtn{flex:none;width:52px;height:74px;align-self:flex-start;border-radius:10px;border:0;background:var(--fab);color:var(--fab-ink);font:inherit;font-size:26px;font-weight:600;line-height:1;cursor:pointer}
-.resbtn.done{background:var(--win);color:var(--card);font-size:22px;font-weight:700}
+.resbtn{flex:none;width:34px;height:38px;align-self:center;border-radius:8px;border:0;background:var(--fab);color:var(--fab-ink);font:inherit;font-size:20px;font-weight:600;line-height:1;cursor:pointer}
+.resbtn.done{background:var(--win);color:var(--card);font-size:17px;font-weight:700}
 .legend-card{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;padding:12px 14px}
 .lgrow{display:flex;align-items:center;gap:8px;line-height:1.25}
 .lgrow.muted{grid-column:1/-1}
@@ -347,7 +347,7 @@ function viewPlan(){
       <div class="lgrow"><span class="lgb done">✓</span>Ergebnis eingetragen</div>
       <div class="lgrow"><span class="lgd next"></span>nächster Termin</div>
       ${ME ? `<div class="lgrow"><span class="lgd mine"></span>deine Termine (noch ${mine})</div>` : `<div class="lgrow"><span class="lgd mine"></span>deine Termine (oben „Ich bin …“ wählen)</div>`}
-      <div class="lgrow muted">😉 besondere Vorkommnisse · ✓ antippen zum Ändern · Name antippen zum Abmelden mit Ersatz</div>
+      <div class="lgrow muted">✓ antippen zum Ändern · Name antippen zum Abmelden mit Ersatz</div>
     </div>`
   + sched.map(d => {
     const dt = pd(d.datum);
@@ -397,7 +397,7 @@ function defaultDate(){
 const GAST = '__gast__';
 function playerOptions(i, chosen, day){
   const nominated = day ? day.spieler : [];
-  const above = chosen.slice(0, i).filter(x => x && x !== GAST);
+  const above = chosen.filter((x, j) => j !== i && x && x !== GAST);
   const val = chosen[i];
   const nom = nominated.filter(n => !above.includes(n));
   const rest = allNames().filter(n => !nominated.includes(n) && !above.includes(n));
@@ -441,7 +441,7 @@ function matchForm(m, opts = {}){
     </div>
     <div class="result" id="f-res"></div>
     <label>Besondere Vorkommnisse <span style="font-weight:400">(optional)</span></label>
-    <textarea id="f-note" rows="2" maxlength="500" placeholder="z. B. Regen, Verletzung, Zeit war aus …">${esc(m?.notiz || '')}</textarea>
+    <textarea id="f-note" rows="2" maxlength="500" placeholder="z. B. Bänderdehnung in der Unterhose">${esc(m?.notiz || '')}</textarea>
     ${pinField()}
     <div class="err" id="f-err"></div>
     <div class="btns">
@@ -464,16 +464,14 @@ function matchForm(m, opts = {}){
       const chosen = pre.map(n => !n ? '' : (allNames().includes(n) || (curDay && curDay.spieler.includes(n))) ? n : GAST);
       pre.forEach((n, i) => { if(chosen[i] === GAST) $$('#p'+i+'g').value = n; });
       const refresh = () => {
-        for(let i = 1; i < 4; i++) if(chosen[i] && chosen[i] !== GAST && chosen.slice(0, i).includes(chosen[i])) chosen[i] = '';
-        for(let i = 1; i < 4; i++) if(!chosen[i-1]) chosen[i] = '';
-        if(chosen[0] && chosen[1] && chosen[2] && !chosen[3] && curDay){
+        const empty = [0,1,2,3].filter(i => !chosen[i]);
+        if(empty.length === 1 && curDay){
           const left = curDay.spieler.filter(n => !chosen.includes(n));
-          if(left.length === 1) chosen[3] = left[0];
+          if(left.length === 1) chosen[empty[0]] = left[0];
         }
         [0,1,2,3].forEach(i => {
           const sel = $$('#p'+i);
           sel.innerHTML = playerOptions(i, chosen, curDay);
-          sel.disabled = i > 0 && !chosen[i-1];
           $$('#p'+i+'g').hidden = chosen[i] !== GAST;
         });
       };
@@ -490,6 +488,19 @@ function matchForm(m, opts = {}){
         if(!confirmed) save.textContent = ex ? 'Überschreiben' : 'Speichern';
       };
       const bindSelects = () => [0,1,2,3].forEach(i => { $$('#p'+i).addEventListener('change', e => { chosen[i] = e.target.value; refresh(); upd(); if(chosen[i] === GAST) $$('#p'+i+'g').focus(); }); });
+      el.querySelectorAll('.setgrid input').forEach(inp => inp.addEventListener('focus', () => setTimeout(() => inp.select(), 0)));
+      // Satz-Automatik: 0–4 auf einer Seite -> 6 auf der anderen, 5 -> 7 (nur 1. und 2. Satz)
+      [0,1].forEach(i => ['a','b'].forEach(side => {
+        const src = $$(`#s${i}${side}`), dst = $$(`#s${i}${side==='a'?'b':'a'}`);
+        src.addEventListener('input', () => {
+          src.dataset.auto = '';
+          const v = num(src.value);
+          if(dst.value !== '' && dst.dataset.auto !== '1') return;
+          if(v !== null && v <= 4 && src.value.length === 1){ dst.value = 6; dst.dataset.auto = '1'; }
+          else if(v === 5){ dst.value = 7; dst.dataset.auto = '1'; }
+          else if(dst.dataset.auto === '1'){ dst.value = ''; dst.dataset.auto = ''; }
+        });
+      }));
       el.addEventListener('input', upd); bindSelects(); syncSelects(); upd();
       $$('#f-date').addEventListener('change', e => {
         curDay = DATA.schedule.find(s => s.datum === e.target.value);
