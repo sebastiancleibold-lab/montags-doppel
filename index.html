@@ -326,7 +326,7 @@ function matchHTML(m){
   const sets = (side) => `<div class="sets">${m.sets.filter(s => num(s[0])!==null && num(s[1])!==null).map(s => {
     const v = side==='A'?s[0]:s[1], o = side==='A'?s[1]:s[0];
     return `<span class="${v>o?'w':''}">${v}</span>`; }).join('')}</div>`;
-  return `<div class="card match" data-id="${esc(m.id)}">${team(m.a,'A')}${sets('A')}${team(m.b,'B')}${sets('B')}${m.notiz ? `<div class="note">📝 ${esc(m.notiz)}</div>` : ''}</div>`;
+  return `<div class="card match" data-id="${esc(m.id)}">${team(m.a,'A')}${sets('A')}${team(m.b,'B')}${sets('B')}${m.notiz ? `<div class="note">😉 ${esc(m.notiz)}</div>` : ''}</div>`;
 }
 
 function viewMatches(){
@@ -347,7 +347,7 @@ function viewPlan(){
       <div class="lgrow"><span class="lgb done">✓</span>Ergebnis eingetragen</div>
       <div class="lgrow"><span class="lgd next"></span>nächster Termin</div>
       ${ME ? `<div class="lgrow"><span class="lgd mine"></span>deine Termine (noch ${mine})</div>` : `<div class="lgrow"><span class="lgd mine"></span>deine Termine (oben „Ich bin …“ wählen)</div>`}
-      <div class="lgrow muted">✓ antippen zum Ändern · Name antippen zum Abmelden mit Ersatz</div>
+      <div class="lgrow muted">😉 besondere Vorkommnisse · ✓ antippen zum Ändern · Name antippen zum Abmelden mit Ersatz</div>
     </div>`
   + sched.map(d => {
     const dt = pd(d.datum);
@@ -364,7 +364,7 @@ function viewPlan(){
         ${d.abgemeldet.map(p => `<button class="chip off" data-act="in" data-p="${esc(p)}">${esc(p)}</button>`).join('')}
         ${n < 4 ? `<button class="chip add" data-act="add">+ Ersatz</button>` : ''}
         ${n < 4 ? `<div class="warn">${4-n} Platz${4-n>1?'e':''} frei, Ersatz gesucht</div>` : ''}
-        ${sr ? `<div class="dres"><b>${esc(sr.who)}</b> · ${esc(sr.sets)}${res.notiz ? ' · 📝' : ''}</div>` : ''}
+        ${sr ? `<div class="dres"><b>${esc(sr.who)}</b> · ${esc(sr.sets)}${res.notiz ? ' 😉' : ''}</div>` : ''}
       </div>
       <button class="resbtn ${res?'done':''}" data-act="result" aria-label="${res?'Ergebnis ansehen oder ändern':'Ergebnis eintragen'}">${res?'✓':'+'}</button></div>`;
   }).join('');
@@ -410,7 +410,8 @@ function playerOptions(i, chosen, day){
 function resultOf(datum){ return DATA.matches.filter(x => x.datum === datum); }
 function shortResult(m){
   const e = evalMatch(m);
-  const sets = m.sets.filter(s => num(s[0])!==null && num(s[1])!==null).map(s => `${s[0]}:${s[1]}`).join(' ');
+  const flip = e.res === 'B';
+  const sets = m.sets.filter(s => num(s[0])!==null && num(s[1])!==null).map(s => flip ? `${s[1]}:${s[0]}` : `${s[0]}:${s[1]}`).join(' ');
   const who = e.res === 'D' ? 'Unentschieden' : `${(e.res==='A'?m.a:m.b).join(' / ')} gewinnen`;
   return {sets, who};
 }
