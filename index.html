@@ -61,7 +61,7 @@ h1 .ball{width:16px;height:16px;border-radius:50%;background:var(--ball);display
 nav{display:flex;max-width:720px;margin:8px auto 0}
 nav button{flex:1;background:none;border:0;color:inherit;opacity:.75;font:inherit;font-weight:600;padding:10px 0;border-bottom:3px solid transparent;cursor:pointer}
 nav button.on{opacity:1;border-bottom-color:var(--ball)}
-main{max-width:720px;margin:0 auto;padding:16px 16px 110px}
+main{max-width:720px;margin:0 auto;padding:16px 16px 40px}
 .banner{background:var(--soft);border:1px dashed var(--line);color:var(--muted);font-size:13px;padding:8px 12px;border-radius:10px;margin-bottom:12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
 .muted{color:var(--muted)}
@@ -87,7 +87,7 @@ td.pts{font-weight:700;font-size:18px;font-family:var(--fhead);font-variant-nume
 .empty{text-align:center;color:var(--muted);padding:30px 10px}
 .fab{position:fixed;right:max(16px,calc(50% - 344px));bottom:calc(18px + env(safe-area-inset-bottom));background:var(--fab);color:var(--fab-ink);border:0;border-radius:28px;padding:14px 20px;font:inherit;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);cursor:pointer;z-index:6}
 .day{display:flex;gap:12px;align-items:flex-start}
-.day .date{min-width:58px;text-align:center;border-radius:10px;background:var(--soft);padding:6px 4px}
+.day .date{min-width:58px;height:74px;box-sizing:border-box;text-align:center;border-radius:10px;background:var(--soft);padding:6px 4px}
 .day .date b{display:block;font-family:var(--fhead);font-size:22px;line-height:1.1}
 .day .date small{font-size:11px;color:var(--muted)}
 .day.past{opacity:.6}
@@ -96,8 +96,16 @@ td.pts{font-weight:700;font-size:18px;font-family:var(--fhead);font-variant-nume
 .chips{display:flex;flex-wrap:wrap;gap:6px;flex:1}
 .day.mine:not(.next) .date{background:var(--mid);color:#fff}
 .day.mine:not(.next) .date small{color:inherit;opacity:.85}
-.resbtn{flex:none;width:40px;height:40px;border-radius:50%;border:1.5px dashed var(--accent);background:transparent;color:var(--accent);font:inherit;font-size:22px;line-height:1;cursor:pointer;align-self:center}
-.resbtn.done{border:0;background:var(--win);color:var(--card);font-size:19px;font-weight:700}
+.resbtn{flex:none;width:52px;height:74px;align-self:flex-start;border-radius:10px;border:0;background:var(--fab);color:var(--fab-ink);font:inherit;font-size:26px;font-weight:600;line-height:1;cursor:pointer}
+.resbtn.done{background:var(--win);color:var(--card);font-size:22px;font-weight:700}
+.legend-card{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;padding:12px 14px}
+.lgrow{display:flex;align-items:center;gap:8px;line-height:1.25}
+.lgrow.muted{grid-column:1/-1}
+.lgb{flex:none;width:24px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
+.lgb.plus{background:var(--fab);color:var(--fab-ink)} .lgb.done{background:var(--win);color:var(--card)}
+.lgd{flex:none;width:24px;height:26px;border-radius:6px}
+.lgd.next{background:var(--accent)} .lgd.mine{background:var(--mid)}
+@media (max-width:360px){.legend-card{grid-template-columns:1fr}}
 .dres{width:100%;font-size:13px;color:var(--muted);margin-top:2px}
 .dres b{color:var(--ink);font-weight:600}
 .note{grid-column:1/-1;font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px;margin-top:4px}
@@ -155,7 +163,6 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
   </nav>
 </header>
 <main id="main"><div class="loading">Lade Daten …</div></main>
-<button class="fab" id="fab">+ Ergebnis</button>
 <datalist id="names"></datalist>
 
 <script>
@@ -298,7 +305,7 @@ function render(){
 
 function viewTable(){
   const st = standings(DATA.matches);
-  if(!st.length) return `<div class="card empty">Noch keine Ergebnisse.<br>Tippe auf „+ Ergebnis“.</div>`;
+  if(!st.length) return `<div class="card empty">Noch keine Ergebnisse.<br>Ergebnisse trägst du im Spielplan über das lila ＋ beim jeweiligen Termin ein.</div>`;
   const played = DATA.matches.filter(m => evalMatch(m).res).length;
   return `<div class="card" style="padding:6px 10px 12px">
     <table><thead><tr><th>#</th><th>Spieler</th><th>Sp</th><th>S-U-N</th><th>Sätze</th><th>Spiele</th><th>Pkt</th></tr></thead><tbody>
@@ -323,7 +330,7 @@ function matchHTML(m){
 }
 
 function viewMatches(){
-  if(!DATA.matches.length) return `<div class="card empty">Noch keine Spiele eingetragen.</div>`;
+  if(!DATA.matches.length) return `<div class="card empty">Noch keine Spiele eingetragen.<br>Ergebnisse trägst du im Spielplan über das lila ＋ ein.</div>`;
   const by = {};
   DATA.matches.forEach(m => (by[m.datum] ||= []).push(m));
   return Object.keys(by).sort().reverse().map(d => `<div class="dayh">${fmtLong(d)}</div>${by[d].map(matchHTML).join('')}`).join('')
@@ -335,7 +342,13 @@ function viewPlan(){
   const sched = DATA.schedule.slice().sort((a, b) => a.datum.localeCompare(b.datum));
   const next = sched.find(d => d.datum >= today);
   const mine = ME ? sched.filter(d => d.datum >= today && d.spieler.includes(ME)).length : null;
-  return (ME ? `<p class="muted small">${esc(ME)}: noch ${mine} Termin${mine===1?'':'e'} in dieser Saison. <span class="lg"><i class="lg-next"></i>nächster Termin <i class="lg-mine"></i>deine Termine <span class="lg-done">✓</span>Ergebnis da</span></p>` : `<p class="muted small">Wähle oben „Ich bin …“, um deine Termine hervorzuheben. Tippe auf einen Namen zum Abmelden, auf + zum Eintragen des Ergebnisses.</p>`)
+  return `<div class="card legend-card small">
+      <div class="lgrow"><span class="lgb plus">＋</span>Ergebnis eintragen</div>
+      <div class="lgrow"><span class="lgb done">✓</span>Ergebnis eingetragen</div>
+      <div class="lgrow"><span class="lgd next"></span>nächster Termin</div>
+      ${ME ? `<div class="lgrow"><span class="lgd mine"></span>deine Termine (noch ${mine})</div>` : `<div class="lgrow"><span class="lgd mine"></span>deine Termine (oben „Ich bin …“ wählen)</div>`}
+      <div class="lgrow muted">✓ antippen zum Ändern · Name antippen zum Abmelden mit Ersatz</div>
+    </div>`
   + sched.map(d => {
     const dt = pd(d.datum);
     const cls = d === next ? 'next' : d.datum < today ? 'past' : '';
@@ -382,18 +395,17 @@ function defaultDate(){
 }
 
 const GAST = '__gast__';
-function playerSelect(i, val, day){
-  const sched = day ? day.spieler : [];
-  const rest = allNames().filter(n => !sched.includes(n));
-  const known = !val || sched.includes(val) || rest.includes(val);
+function playerOptions(i, chosen, day){
+  const nominated = day ? day.spieler : [];
+  const above = chosen.slice(0, i).filter(x => x && x !== GAST);
+  const val = chosen[i];
+  const nom = nominated.filter(n => !above.includes(n));
+  const rest = allNames().filter(n => !nominated.includes(n) && !above.includes(n));
   const opt = n => `<option value="${esc(n)}" ${n===val?'selected':''}>${esc(n)}</option>`;
-  return `<select id="p${i}" class="psel">
-      <option value="" ${!val?'selected':''}>– Spieler wählen –</option>
-      ${sched.length ? `<optgroup label="Eingeteilt">${sched.map(opt).join('')}</optgroup>` : ''}
-      <optgroup label="${sched.length ? 'Weitere Spieler' : 'Spieler'}">${rest.map(opt).join('')}</optgroup>
-      <option value="${GAST}" ${!known?'selected':''}>Gast / anderer Name …</option>
-    </select>
-    <input id="p${i}g" class="gast" placeholder="Name des Gasts" value="${known ? '' : esc(val)}" ${known ? 'hidden' : ''}>`;
+  return `<option value="" ${!val?'selected':''}>– Spieler wählen –</option>
+    ${nom.length ? `<optgroup label="Eingeteilt">${nom.map(opt).join('')}</optgroup>` : ''}
+    ${rest.length ? `<optgroup label="${nom.length ? 'Weitere Spieler' : 'Spieler'}">${rest.map(opt).join('')}</optgroup>` : ''}
+    <option value="${GAST}" ${val===GAST?'selected':''}>Gast / anderer Name …</option>`;
 }
 function resultOf(datum){ return DATA.matches.filter(x => x.datum === datum); }
 function shortResult(m){
@@ -408,7 +420,7 @@ function matchForm(m, opts = {}){
   if(!m){ const ex = resultOf(datum)[0]; if(ex) m = ex; }
   const isNew = !m;
   const day = DATA.schedule.find(d => d.datum === datum);
-  const pre = m ? [...m.a, ...m.b] : (day ? day.spieler.slice(0,4) : []);
+  const pre = m ? [...m.a, ...m.b] : ['', '', '', ''];
   const sets = m ? m.sets : [[null,null],[null,null],[null,null]];
   const v = x => x === null || x === undefined ? '' : x;
   openSheet(`
@@ -417,8 +429,7 @@ function matchForm(m, opts = {}){
     <label>Datum</label><input id="f-date" type="date" value="${datum}">
     <label>Paarungen</label>
     <div class="teams">
-      <div class="t"><b>Team A</b><div id="ps0">${playerSelect(0, pre[0], day)}</div><div id="ps1">${playerSelect(1, pre[1], day)}</div></div>
-      <div class="t"><b>Team B</b><div id="ps2">${playerSelect(2, pre[2], day)}</div><div id="ps3">${playerSelect(3, pre[3], day)}</div></div>
+      ${[['A',0,1],['B',2,3]].map(([t,x,y]) => `<div class="t"><b>Team ${t}</b>${[x,y].map(i => `<select id="p${i}" class="psel"></select><input id="p${i}g" class="gast" placeholder="Name des Gasts" hidden>`).join('')}</div>`).join('')}
     </div>
     <label>Sätze (Team A : Team B)</label>
     <div class="setgrid">
@@ -440,7 +451,7 @@ function matchForm(m, opts = {}){
       const $$ = s => el.querySelector(s);
       const save = $$('#f-save');
       let confirmed = false;
-      const name = i => { const s = $$('#p'+i).value; return s === GAST ? $$('#p'+i+'g').value.trim() : s; };
+      const name = i => chosen[i] === GAST ? $$('#p'+i+'g').value.trim() : chosen[i];
       const read = () => ({
         id: m ? m.id : '', datum: $$('#f-date').value,
         a: [name(0), name(1)], b: [name(2), name(3)],
@@ -448,13 +459,24 @@ function matchForm(m, opts = {}){
         notiz: $$('#f-note').value.trim()
       });
       const others = () => resultOf($$('#f-date').value).filter(x => !m || x.id !== m.id);
-      const syncSelects = () => {
-        const chosen = [0,1,2,3].map(i => $$('#p'+i).value);
+      let curDay = day;
+      const chosen = pre.map(n => !n ? '' : (allNames().includes(n) || (curDay && curDay.spieler.includes(n))) ? n : GAST);
+      pre.forEach((n, i) => { if(chosen[i] === GAST) $$('#p'+i+'g').value = n; });
+      const refresh = () => {
+        for(let i = 1; i < 4; i++) if(chosen[i] && chosen[i] !== GAST && chosen.slice(0, i).includes(chosen[i])) chosen[i] = '';
+        for(let i = 1; i < 4; i++) if(!chosen[i-1]) chosen[i] = '';
+        if(chosen[0] && chosen[1] && chosen[2] && !chosen[3] && curDay){
+          const left = curDay.spieler.filter(n => !chosen.includes(n));
+          if(left.length === 1) chosen[3] = left[0];
+        }
         [0,1,2,3].forEach(i => {
-          $$('#p'+i).querySelectorAll('option').forEach(o => { o.disabled = !!o.value && o.value !== GAST && chosen.includes(o.value) && chosen[i] !== o.value; });
+          const sel = $$('#p'+i);
+          sel.innerHTML = playerOptions(i, chosen, curDay);
+          sel.disabled = i > 0 && !chosen[i-1];
           $$('#p'+i+'g').hidden = chosen[i] !== GAST;
         });
       };
+      const syncSelects = refresh;
       const upd = () => {
         const x = read(), e = evalMatch(x);
         $$('#f-res').textContent = !e.res ? 'Noch kein Satz eingetragen'
@@ -466,13 +488,12 @@ function matchForm(m, opts = {}){
         else box.hidden = true;
         if(!confirmed) save.textContent = ex ? 'Überschreiben' : 'Speichern';
       };
-      const bindSelects = () => [0,1,2,3].forEach(i => { $$('#p'+i).addEventListener('change', () => { syncSelects(); upd(); if($$('#p'+i).value === GAST) $$('#p'+i+'g').focus(); }); });
+      const bindSelects = () => [0,1,2,3].forEach(i => { $$('#p'+i).addEventListener('change', e => { chosen[i] = e.target.value; refresh(); upd(); if(chosen[i] === GAST) $$('#p'+i+'g').focus(); }); });
       el.addEventListener('input', upd); bindSelects(); syncSelects(); upd();
       $$('#f-date').addEventListener('change', e => {
-        const d = DATA.schedule.find(s => s.datum === e.target.value);
-        const keep = isNew ? (d ? d.spieler.slice(0,4) : [0,1,2,3].map(name)) : [0,1,2,3].map(name);
-        [0,1,2,3].forEach(i => $$('#ps'+i).innerHTML = playerSelect(i, keep[i], d));
-        bindSelects(); syncSelects(); confirmed = false; upd();
+        curDay = DATA.schedule.find(s => s.datum === e.target.value);
+        if(isNew) chosen.fill('');
+        refresh(); confirmed = false; upd();
       });
       $$('#f-cancel').onclick = close;
       const err = $$('#f-err');
@@ -529,7 +550,6 @@ function dayForm(datum, act, p){
 /* ---------- Events ---------- */
 $('#nav').onclick = e => { const t = e.target.closest('button'); if(!t) return; TAB = t.dataset.tab; store.set('tab', TAB); render(); window.scrollTo(0,0); };
 $('#me').onchange = e => { ME = e.target.value; store.set('me', ME); render(); };
-$('#fab').onclick = () => matchForm(null);
 $('#main').onclick = e => {
   const st = e.target.closest('.stilbtn'); if(st){ document.documentElement.dataset.style = st.dataset.stil; return render(); }
   const m = e.target.closest('.match'); if(m) return matchForm(DATA.matches.find(x => x.id === m.dataset.id));
