@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="de" data-style="rasen">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Montags-Doppel</title>
+<meta name="theme-color" content="#1f4d2f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Doppel">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;600;700&family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+:root{
+  --bg:#f4f6f1; --card:#ffffff; --ink:#1b2419; --muted:#667063; --line:#e2e6dd;
+  --accent:#2f6b3a; --accent-ink:#ffffff; --ball:#c9e23b; --win:#2f6b3a; --loss:#b4442e; --draw:#a67c12;
+  --soft:#eef3e8; --shadow:0 1px 2px rgba(0,0,0,.05),0 2px 8px rgba(0,0,0,.04);
+  --hdr:var(--accent); --hdr-ink:var(--accent-ink); --fab:var(--ball); --fab-ink:#1b2419; --radius:14px; --fbody:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --fhead:var(--fbody); --hcase:none;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121611; --card:#1b2119; --ink:#e8ede4; --muted:#9aa595; --line:#2c3429;
+    --accent:#7cc487; --accent-ink:#0f1a10; --ball:#d4ec4a; --win:#7cc487; --loss:#ee8a74; --draw:#e0b54a;
+    --soft:#232b20; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+    --bg:#121611; --card:#1b2119; --ink:#e8ede4; --muted:#9aa595; --line:#2c3429;
+    --accent:#7cc487; --accent-ink:#0f1a10; --ball:#d4ec4a; --win:#7cc487; --loss:#ee8a74; --draw:#e0b54a;
+    --soft:#232b20; --shadow:none;
+}
+
+/* ---- Stil 1: Sandplatz ---- */
+:root[data-style="sand"]{--bg:#f7efe6;--card:#fffaf4;--ink:#2b1d14;--muted:#8a6f5c;--line:#ecdccb;--accent:#c4562a;--accent-ink:#fff;--ball:#f4f7c8;--win:#2f7a46;--loss:#b23a2a;--draw:#b9811a;--soft:#f5e6d6;
+  --hdr:#c4562a repeating-linear-gradient(90deg,transparent 0 46px,rgba(255,255,255,.13) 46px 48px);--hdr-ink:#fff;--fab:#2b1d14;--fab-ink:#fff;--radius:16px;--fbody:"DM Sans",system-ui,sans-serif;--fhead:"DM Sans",system-ui,sans-serif;color-scheme:light}
+/* ---- Stil 2: Rasen klassisch ---- */
+:root[data-style="rasen"]{--bg:#f5f4ee;--card:#fff;--ink:#1d2b22;--muted:#6b746c;--line:#e2e2d8;--accent:#1f4d2f;--accent-ink:#fff;--ball:#c7b8e3;--win:#1f4d2f;--loss:#9b2c2c;--draw:#8a6d1c;--soft:#eef1e9;
+  --hdr:#1f4d2f;--hdr-ink:#fff;--fab:#4b2e6e;--fab-ink:#fff;--radius:6px;--fbody:system-ui,-apple-system,"Segoe UI",sans-serif;--fhead:"Playfair Display",Georgia,serif;--shadow:none;color-scheme:light}
+/* ---- Stil 3: Flutlicht ---- */
+:root[data-style="flutlicht"]{--bg:#0c1120;--card:#151c2f;--ink:#eef2ff;--muted:#8d97b5;--line:#253052;--accent:#d7f34a;--accent-ink:#0c1120;--ball:#d7f34a;--win:#d7f34a;--loss:#ff7070;--draw:#ffc94a;--soft:#1c2540;
+  --hdr:#0c1120;--hdr-ink:#fff;--fab:#d7f34a;--fab-ink:#0c1120;--radius:18px;--fbody:"Barlow",system-ui,sans-serif;--fhead:"Barlow Condensed",system-ui,sans-serif;--hcase:uppercase;--shadow:none;color-scheme:dark}
+:root[data-style="flutlicht"] header{border-bottom:1px solid var(--line)}
+:root[data-style="flutlicht"] .team.w{color:var(--accent)}
+:root[data-style="flutlicht"] .day.next .date{color:var(--accent-ink)}
+:root[data-style="rasen"] .card{border-left:3px solid var(--accent)}
+:root[data-style="rasen"] nav button{font-family:var(--fhead);font-size:17px}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.4 var(--fbody);-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:5;background:var(--hdr);color:var(--hdr-ink);padding:calc(12px + env(safe-area-inset-top)) 16px 0}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:8px;max-width:720px;margin:0 auto}
+h1{font-family:var(--fhead);text-transform:var(--hcase);letter-spacing:.01em;font-size:21px;margin:0;white-space:nowrap;display:flex;align-items:center;gap:8px}
+h1 .ball{width:16px;height:16px;border-radius:50%;background:var(--ball);display:inline-block;box-shadow:inset -3px -2px 0 rgba(0,0,0,.12)}
+.me{max-width:44%;background:transparent;color:inherit;border:1px solid rgba(255,255,255,.4);border-radius:8px;padding:4px 6px;font:inherit;font-size:14px}
+.me option{color:#000}
+nav{display:flex;max-width:720px;margin:8px auto 0}
+nav button{flex:1;background:none;border:0;color:inherit;opacity:.75;font:inherit;font-weight:600;padding:10px 0;border-bottom:3px solid transparent;cursor:pointer}
+nav button.on{opacity:1;border-bottom-color:var(--ball)}
+main{max-width:720px;margin:0 auto;padding:16px 16px 110px}
+.banner{background:var(--soft);border:1px dashed var(--line);color:var(--muted);font-size:13px;padding:8px 12px;border-radius:10px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:9px 4px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:600}
+th:nth-child(2),td:nth-child(2){text-align:left;width:100%}
+th:first-child,td:first-child{text-align:center;width:26px}
+tr.mine td{background:var(--soft)}
+td.pts{font-weight:700;font-size:18px;font-family:var(--fhead);font-variant-numeric:lining-nums tabular-nums}
+.rank1 td:first-child{color:var(--draw);font-weight:700}
+.legend{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5}
+.dayh{font-family:var(--fhead);font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:18px 2px 8px}
+.match{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;cursor:pointer}
+.team{font-size:15px}
+.team.w{font-weight:700}
+.team .tag{font-size:11px;font-weight:700;padding:1px 6px;border-radius:6px;margin-left:6px;vertical-align:1px}
+.tag.w{background:var(--win);color:var(--card)} .tag.d{background:var(--draw);color:var(--card)}
+.sets{display:flex;gap:10px;font-variant-numeric:tabular-nums;justify-content:flex-end}
+.sets span{min-width:18px;text-align:center}
+.sets .w{font-weight:700}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+.fab{position:fixed;right:max(16px,calc(50% - 344px));bottom:calc(18px + env(safe-area-inset-bottom));background:var(--fab);color:var(--fab-ink);border:0;border-radius:28px;padding:14px 20px;font:inherit;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);cursor:pointer;z-index:6}
+.day{display:flex;gap:12px;align-items:flex-start}
+.day .date{min-width:58px;text-align:center;border-radius:10px;background:var(--soft);padding:6px 4px}
+.day .date b{display:block;font-family:var(--fhead);font-size:22px;line-height:1.1}
+.day .date small{font-size:11px;color:var(--muted)}
+.day.past{opacity:.6}
+.day.next .date{background:var(--accent);color:var(--accent-ink)}
+.day.next .date small{color:inherit;opacity:.8}
+.chips{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:20px;padding:5px 11px;font:inherit;font-size:14px;cursor:pointer}
+.chip.me{border-color:var(--accent);background:var(--soft);font-weight:700}
+.chip.off{text-decoration:line-through;color:var(--muted);border-style:dashed}
+.chip.sub{border-color:var(--draw)}
+.chip.add{border-style:dashed;color:var(--accent);font-weight:600}
+.warn{color:var(--loss);font-size:12px;font-weight:600;width:100%}
+.cnt{font-size:12px;color:var(--muted);width:100%}
+/* sheet */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+@media (min-width:600px){.overlay{align-items:center}.sheet{border-radius:18px}}
+.sheet h2{margin:0 0 12px;font-size:20px;font-family:var(--fhead);text-transform:var(--hcase)}
+label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:12px 0 4px}
+input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%}
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.teams .t{background:var(--soft);border-radius:12px;padding:8px 10px 10px}
+.teams .t input{margin-top:6px;background:var(--card)}
+.teams .t b{font-size:13px}
+.setgrid{display:grid;grid-template-columns:auto 1fr 14px 1fr;gap:8px;align-items:center}
+.setgrid input{text-align:center}
+.setgrid span{font-size:13px;color:var(--muted)}
+.result{margin-top:14px;padding:10px 12px;border-radius:10px;background:var(--soft);font-weight:600}
+.btns{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;font:inherit;font-weight:700;border-radius:12px;padding:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--loss)}
+.btn:disabled{opacity:.5}
+.err{color:var(--loss);font-size:14px;margin-top:10px;min-height:1em}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:30}
+.loading{text-align:center;padding:40px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <h1><span class="ball"></span>Montags-Doppel</h1>
+    <select class="me" id="me" aria-label="Ich bin"></select>
+  </div>
+  <nav id="nav">
+    <button data-tab="tabelle" class="on">Tabelle</button>
+    <button data-tab="spiele">Spiele</button>
+    <button data-tab="plan">Spielplan</button>
+  </nav>
+</header>
+<main id="main"><div class="loading">Lade Daten …</div></main>
+<button class="fab" id="fab">+ Ergebnis</button>
+<datalist id="names"></datalist>
+
+<script>
+const REGULARS = ['Norbert','Phil','Matthias','Sebastian','Frank','Alex'];
+const SUBS = ['Flo','Volker','Niko'];
+const SEED = [["2026-09-28",["Norbert","Matthias","Sebastian","Frank"]],["2026-10-05",["Matthias","Sebastian","Frank","Alex"]],["2026-10-12",["Norbert","Sebastian","Frank","Alex"]],["2026-10-19",["Norbert","Phil","Matthias","Alex"]],["2026-10-26",["Phil","Matthias","Sebastian","Frank"]],["2026-11-02",["Norbert","Sebastian","Frank","Alex"]],["2026-11-09",["Norbert","Phil","Matthias","Sebastian"]],["2026-11-16",["Phil","Matthias","Frank","Alex"]],["2026-11-23",["Norbert","Phil","Sebastian","Alex"]],["2026-11-30",["Norbert","Matthias","Sebastian","Frank"]],["2026-12-07",["Phil","Matthias","Frank","Alex"]],["2026-12-14",["Norbert","Phil","Sebastian","Alex"]],["2026-12-21",["Norbert","Matthias","Frank","Alex"]],["2026-12-28",["Norbert","Phil","Sebastian","Frank"]],["2027-01-04",["Phil","Matthias","Sebastian","Alex"]],["2027-01-11",["Norbert","Matthias","Sebastian","Frank"]],["2027-01-18",["Phil","Matthias","Sebastian","Alex"]],["2027-01-25",["Norbert","Phil","Matthias","Frank"]],["2027-02-01",["Norbert","Sebastian","Frank","Alex"]],["2027-02-08",["Norbert","Phil","Matthias","Sebastian"]],["2027-02-15",["Phil","Matthias","Frank","Alex"]],["2027-02-22",["Norbert","Sebastian","Frank","Alex"]],["2027-03-01",["Phil","Matthias","Sebastian","Frank"]],["2027-03-08",["Norbert","Phil","Matthias","Alex"]],["2027-03-15",["Norbert","Matthias","Sebastian","Frank"]],["2027-03-22",["Phil","Sebastian","Frank","Alex"]],["2027-03-29",["Norbert","Matthias","Sebastian","Alex"]],["2027-04-05",["Norbert","Phil","Frank","Alex"]],["2027-04-12",["Matthias","Sebastian","Frank","Alex"]],["2027-04-19",["Norbert","Phil","Matthias","Sebastian"]]];
+
+/* ---------- Speicher (lokal) ---------- */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('md_'+k); return v===null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem('md_'+k, JSON.stringify(v)); }catch(e){} }
+};
+
+/* ---------- Backend: Supabase (live) oder Demo im Browser ---------- */
+const CFG = window.APP_CONFIG || {};
+const LIVE = !!(CFG.supabaseUrl && CFG.supabaseKey);
+const DEMO_PIN = 'aufschlag';
+const Demo = {
+  db(){
+    let d = store.get('demo', null);
+    if(!d){
+      d = { schedule: SEED.map(([datum, sp]) => ({datum, spieler: sp.slice(), abgemeldet: []})), matches: [
+        {id:'d1', datum:'2026-09-28', a:['Norbert','Matthias'], b:['Sebastian','Frank'], sets:[[6,4],[3,6],[10,7]]},
+        {id:'d2', datum:'2026-10-05', a:['Matthias','Alex'], b:['Sebastian','Frank'], sets:[[4,6],[2,6],[null,null]]},
+        {id:'d3', datum:'2026-10-12', a:['Norbert','Alex'], b:['Sebastian','Frank'], sets:[[6,3],[5,7],[null,null]]},
+        {id:'d4', datum:'2026-11-09', a:['Norbert','Sebastian'], b:['Phil','Matthias'], sets:[[7,5],[6,4],[null,null]]},
+      ]};
+      store.set('demo', d);
+    }
+    return d;
+  },
+  pin(p){ if(String(p||'').trim().toLowerCase() !== DEMO_PIN) throw new Error('Falsche PIN'); },
+  getData(){ return JSON.parse(JSON.stringify(this.db())); },
+  saveMatch(m, p){ this.pin(p); const d=this.db(); if(!m.id){ m.id=Math.random().toString(36).slice(2,10); d.matches.push(m);} else { const i=d.matches.findIndex(x=>x.id===m.id); if(i>=0) d.matches[i]=m; else d.matches.push(m);} store.set('demo',d); return this.getData(); },
+  deleteMatch(id, p){ this.pin(p); const d=this.db(); d.matches=d.matches.filter(x=>x.id!==id); store.set('demo',d); return this.getData(); },
+  saveDay(datum, sp, ab, p){ this.pin(p); const d=this.db(); let r=d.schedule.find(x=>x.datum===datum); if(!r){ r={datum}; d.schedule.push(r);} r.spieler=sp; r.abgemeldet=ab; store.set('demo',d); return this.getData(); }
+};
+const Live = {
+  async req(path, body){
+    let res;
+    try{
+      res = await fetch(CFG.supabaseUrl.replace(/\/$/,'') + '/rest/v1/' + path, {
+        method: body ? 'POST' : 'GET',
+        headers: {apikey: CFG.supabaseKey, 'Content-Type': 'application/json'},
+        body: body ? JSON.stringify(body) : undefined
+      });
+    }catch(e){ throw new Error('Keine Verbindung. Bist du online?'); }
+    const txt = await res.text();
+    if(!res.ok){ let msg = txt; try{ msg = JSON.parse(txt).message || txt; }catch(e){} throw new Error(msg); }
+    return txt ? JSON.parse(txt) : null;
+  },
+  async getData(){
+    const [ms, sc] = await Promise.all([
+      this.req('matches?select=id,datum,a1,a2,b1,b2,sets&order=datum.asc,created_at.asc'),
+      this.req('schedule?select=datum,spieler,abgemeldet&order=datum.asc')
+    ]);
+    const data = {
+      matches: ms.map(r => ({id: r.id, datum: r.datum, a: [r.a1, r.a2], b: [r.b1, r.b2], sets: r.sets || []})),
+      schedule: sc.map(r => ({datum: r.datum, spieler: r.spieler || [], abgemeldet: r.abgemeldet || []}))
+    };
+    store.set('cache', data);
+    return data;
+  },
+  async saveMatch(m, p){
+    await this.req('rpc/save_match', {p_pin: p, p_id: m.id || null, p_datum: m.datum, p_a1: m.a[0], p_a2: m.a[1], p_b1: m.b[0], p_b2: m.b[1], p_sets: m.sets});
+    return this.getData();
+  },
+  async deleteMatch(id, p){ await this.req('rpc/delete_match', {p_pin: p, p_id: id}); return this.getData(); },
+  async saveDay(datum, sp, ab, p){ await this.req('rpc/save_day', {p_pin: p, p_datum: datum, p_spieler: sp, p_abgemeldet: ab}); return this.getData(); }
+};
+function api(fn, ...args){
+  if(LIVE) return Live[fn](...args);
+  return new Promise((res, rej) => setTimeout(() => { try{ res(Demo[fn](...args)); }catch(e){ rej(e); } }, 120));
+}
+
+/* ---------- Hilfsfunktionen ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const WD = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+const MON = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+const pd = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const fmtLong = s => { const d = pd(s); return `${WD[d.getDay()]}, ${d.getDate()}. ${MON[d.getMonth()]} ${d.getFullYear()}`; };
+const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const num = v => (v === null || v === undefined || v === '' || isNaN(Number(v))) ? null : Number(v);
+
+/* Auswertung eines Matches. 3. Satz mit 10+ Punkten = Match-Tie-Break (zählt als 1 Spiel). */
+function evalMatch(m){
+  let sa=0, sb=0, ga=0, gb=0, played=0;
+  (m.sets||[]).forEach((s, i) => {
+    const a = num(s[0]), b = num(s[1]);
+    if(a === null || b === null) return;
+    played++;
+    if(a > b) sa++; else if(b > a) sb++;
+    const mtb = i === 2 && Math.max(a,b) >= 10;
+    if(mtb){ ga += a > b ? 1 : 0; gb += b > a ? 1 : 0; } else { ga += a; gb += b; }
+  });
+  const res = played === 0 ? null : sa > sb ? 'A' : sb > sa ? 'B' : 'D';
+  return {sa, sb, ga, gb, res, played};
+}
+
+function standings(matches){
+  const t = {};
+  const row = n => t[n] ||= {name:n, sp:0, s:0, u:0, n:0, pts:0, sw:0, sl:0, gw:0, gl:0};
+  matches.forEach(m => {
+    const e = evalMatch(m); if(!e.res) return;
+    [[m.a, e.sa, e.sb, e.ga, e.gb, 'A'], [m.b, e.sb, e.sa, e.gb, e.ga, 'B']].forEach(([team, sw, sl, gw, gl, side]) => {
+      team.filter(Boolean).forEach(p => {
+        const r = row(p); r.sp++; r.sw += sw; r.sl += sl; r.gw += gw; r.gl += gl;
+        if(e.res === 'D'){ r.u++; r.pts += 1; } else if(e.res === side){ r.s++; r.pts += 2; } else r.n++;
+      });
+    });
+  });
+  return Object.values(t).sort((x, y) => y.pts - x.pts || (y.sw-y.sl) - (x.sw-x.sl) || (y.gw-y.gl) - (x.gw-x.gl) || x.sp - y.sp || x.name.localeCompare(y.name));
+}
+
+/* ---------- Zustand ---------- */
+let DATA = {matches: [], schedule: []};
+let TAB = store.get('tab', 'tabelle');
+let ME = store.get('me', '');
+const sign = n => n > 0 ? '+'+n : String(n);
+
+function allNames(){
+  const s = new Set([...REGULARS, ...SUBS]);
+  DATA.matches.forEach(m => [...m.a, ...m.b].forEach(n => n && s.add(n)));
+  DATA.schedule.forEach(d => [...d.spieler, ...d.abgemeldet].forEach(n => n && s.add(n)));
+  return [...s];
+}
+
+/* ---------- Rendering ---------- */
+function render(){
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === TAB));
+  const names = allNames();
+  $('#names').innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
+  $('#me').innerHTML = `<option value="">Ich bin …</option>` + names.map(n => `<option ${n===ME?'selected':''}>${esc(n)}</option>`).join('');
+  const demo = LIVE ? '' : `<div class="banner">Demo-Version: Einträge bleiben nur in diesem Browser. PIN zum Testen: <b>${DEMO_PIN}</b><br>Stil ansehen: ${['sand','rasen','flutlicht'].map((k,i)=>`<button class="chip stilbtn" data-stil="${k}" style="padding:2px 9px;font-size:12px;margin:4px 4px 0 0${document.documentElement.dataset.style===k?';font-weight:700;border-color:var(--accent)':''}">${['Sandplatz','Rasen','Flutlicht'][i]}</button>`).join('')}</div>`;
+  $('#main').innerHTML = demo + (TAB === 'tabelle' ? viewTable() : TAB === 'spiele' ? viewMatches() : viewPlan());
+}
+
+function viewTable(){
+  const st = standings(DATA.matches);
+  if(!st.length) return `<div class="card empty">Noch keine Ergebnisse.<br>Tippe auf „+ Ergebnis“.</div>`;
+  const played = DATA.matches.filter(m => evalMatch(m).res).length;
+  return `<div class="card" style="padding:6px 10px 12px">
+    <table><thead><tr><th>#</th><th>Spieler</th><th>Sp</th><th>S-U-N</th><th>Sätze</th><th>Spiele</th><th>Pkt</th></tr></thead><tbody>
+    ${st.map((r, i) => `<tr class="${r.name===ME?'mine':''} ${i===0?'rank1':''}">
+      <td>${i+1}</td><td>${esc(r.name)}</td><td>${r.sp}</td><td>${r.s}-${r.u}-${r.n}</td>
+      <td>${sign(r.sw-r.sl)}</td><td>${sign(r.gw-r.gl)}</td><td class="pts">${r.pts}</td></tr>`).join('')}
+    </tbody></table>
+    <div class="legend">${played} Matches gewertet. Sieg 2 Punkte, Unentschieden 1, Niederlage 0 (je Spieler).
+    Bei Punktgleichheit entscheiden Satz-, dann Spieldifferenz. Ein Match-Tie-Break zählt als 1 Spiel.</div></div>`;
+}
+
+function matchHTML(m){
+  const e = evalMatch(m);
+  const team = (t, side) => {
+    const w = e.res === side, d = e.res === 'D';
+    return `<div class="team ${w?'w':''}">${t.map(esc).join(' / ')}${w?'<span class="tag w">Sieg</span>':''}${d&&side==='A'?'<span class="tag d">Remis</span>':''}</div>`;
+  };
+  const sets = (side) => `<div class="sets">${m.sets.filter(s => num(s[0])!==null && num(s[1])!==null).map(s => {
+    const v = side==='A'?s[0]:s[1], o = side==='A'?s[1]:s[0];
+    return `<span class="${v>o?'w':''}">${v}</span>`; }).join('')}</div>`;
+  return `<div class="card match" data-id="${esc(m.id)}">${team(m.a,'A')}${sets('A')}${team(m.b,'B')}${sets('B')}</div>`;
+}
+
+function viewMatches(){
+  if(!DATA.matches.length) return `<div class="card empty">Noch keine Spiele eingetragen.</div>`;
+  const by = {};
+  DATA.matches.forEach(m => (by[m.datum] ||= []).push(m));
+  return Object.keys(by).sort().reverse().map(d => `<div class="dayh">${fmtLong(d)}</div>${by[d].map(matchHTML).join('')}`).join('')
+    + `<p class="muted small" style="text-align:center">Tippe auf ein Spiel, um es zu ändern oder zu löschen.</p>`;
+}
+
+function viewPlan(){
+  const today = todayISO();
+  const sched = DATA.schedule.slice().sort((a, b) => a.datum.localeCompare(b.datum));
+  const next = sched.find(d => d.datum >= today);
+  const mine = ME ? sched.filter(d => d.datum >= today && d.spieler.includes(ME)).length : null;
+  return (ME ? `<p class="muted small">${esc(ME)}: noch ${mine} Termin${mine===1?'':'e'} in dieser Saison.</p>` : `<p class="muted small">Wähle oben „Ich bin …“, um deine Termine hervorzuheben. Tippe auf einen Namen zum Abmelden.</p>`)
+  + sched.map(d => {
+    const dt = pd(d.datum);
+    const cls = d === next ? 'next' : d.datum < today ? 'past' : '';
+    const n = d.spieler.length;
+    const reg = SEED.find(s => s[0] === d.datum)?.[1] || [];
+    return `<div class="card day ${cls}" data-date="${d.datum}">
+      <div class="date"><small>${WD[dt.getDay()]}</small><b>${dt.getDate()}.</b><small>${MON[dt.getMonth()]}</small></div>
+      <div class="chips">
+        ${d.spieler.map(p => `<button class="chip ${p===ME?'me':''} ${reg.includes(p)?'':'sub'}" data-act="out" data-p="${esc(p)}">${esc(p)}</button>`).join('')}
+        ${d.abgemeldet.map(p => `<button class="chip off" data-act="in" data-p="${esc(p)}">${esc(p)}</button>`).join('')}
+        ${n < 4 ? `<button class="chip add" data-act="add">+ Ersatz</button>` : ''}
+        ${n < 4 ? `<div class="warn">${4-n} Platz${4-n>1?'e':''} frei, Ersatz gesucht</div>` : ''}
+      </div></div>`;
+  }).join('');
+}
+
+/* ---------- Dialoge ---------- */
+function openSheet(html, onMount){
+  const o = document.createElement('div');
+  o.className = 'overlay';
+  o.innerHTML = `<div class="sheet" role="dialog">${html}</div>`;
+  o.addEventListener('click', e => { if(e.target === o) o.remove(); });
+  document.body.appendChild(o);
+  onMount && onMount(o.firstChild, () => o.remove());
+}
+const pinField = () => `<label>Gruppen-PIN</label><input id="pin" type="password" autocomplete="off" value="${esc(store.get('pin',''))}" placeholder="PIN der Gruppe">`;
+function toast(t){ const d=document.createElement('div'); d.className='toast'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(), 2200); }
+
+async function run(btn, errEl, fn){
+  btn.disabled = true; errEl.textContent = '';
+  try{ const pin = $('#pin').value.trim(); const res = await fn(pin); store.set('pin', pin); DATA = res; render(); return true; }
+  catch(e){ errEl.textContent = e.message || String(e); btn.disabled = false; return false; }
+}
+
+function defaultDate(){
+  const today = todayISO();
+  const past = DATA.schedule.map(d => d.datum).filter(d => d <= today).sort();
+  return past.length ? past[past.length-1] : today;
+}
+
+function matchForm(m){
+  const isNew = !m;
+  const datum = m ? m.datum : defaultDate();
+  const day = DATA.schedule.find(d => d.datum === datum);
+  const pre = m ? [...m.a, ...m.b] : (day ? day.spieler.slice(0,4) : []);
+  const sets = m ? m.sets : [[null,null],[null,null],[null,null]];
+  const v = x => x === null || x === undefined ? '' : x;
+  openSheet(`
+    <h2>${isNew ? 'Ergebnis eintragen' : 'Ergebnis ändern'}</h2>
+    <label>Datum</label><input id="f-date" type="date" value="${datum}">
+    <label>Paarungen</label>
+    <div class="teams">
+      <div class="t"><b>Team A</b>
+        <input list="names" id="p0" value="${esc(pre[0]||'')}" placeholder="Spieler 1">
+        <input list="names" id="p1" value="${esc(pre[1]||'')}" placeholder="Spieler 2"></div>
+      <div class="t"><b>Team B</b>
+        <input list="names" id="p2" value="${esc(pre[2]||'')}" placeholder="Spieler 3">
+        <input list="names" id="p3" value="${esc(pre[3]||'')}" placeholder="Spieler 4"></div>
+    </div>
+    <label>Sätze (Team A : Team B)</label>
+    <div class="setgrid">
+      ${[0,1,2].map(i => `<span>${i<2 ? (i+1)+'. Satz' : 'MTB / 3.'}</span>
+        <input inputmode="numeric" pattern="[0-9]*" id="s${i}a" value="${v(sets[i]?.[0])}" placeholder="–">
+        <span style="text-align:center">:</span>
+        <input inputmode="numeric" pattern="[0-9]*" id="s${i}b" value="${v(sets[i]?.[1])}" placeholder="–">`).join('')}
+    </div>
+    <div class="result" id="f-res"></div>
+    ${pinField()}
+    <div class="err" id="f-err"></div>
+    <div class="btns">
+      ${isNew ? '' : '<button class="btn danger" id="f-del">Löschen</button>'}
+      <button class="btn" id="f-cancel">Abbrechen</button>
+      <button class="btn primary" id="f-save">Speichern</button>
+    </div>`, (el, close) => {
+      const read = () => ({
+        id: m ? m.id : '', datum: el.querySelector('#f-date').value,
+        a: [el.querySelector('#p0').value.trim(), el.querySelector('#p1').value.trim()],
+        b: [el.querySelector('#p2').value.trim(), el.querySelector('#p3').value.trim()],
+        sets: [0,1,2].map(i => [num(el.querySelector(`#s${i}a`).value), num(el.querySelector(`#s${i}b`).value)])
+      });
+      const upd = () => {
+        const x = read(), e = evalMatch(x);
+        el.querySelector('#f-res').textContent = !e.res ? 'Noch kein Satz eingetragen'
+          : e.res === 'D' ? `Unentschieden (${e.sa}:${e.sb} Sätze), je 1 Punkt`
+          : `Sieg ${(e.res==='A'?x.a:x.b).filter(Boolean).join(' / ') || 'Team '+e.res} (${Math.max(e.sa,e.sb)}:${Math.min(e.sa,e.sb)} Sätze), je 2 Punkte`;
+      };
+      el.querySelectorAll('input').forEach(i => i.addEventListener('input', upd)); upd();
+      el.querySelector('#f-date').addEventListener('change', e => {
+        if(!isNew) return;
+        const d = DATA.schedule.find(s => s.datum === e.target.value);
+        if(d) d.spieler.slice(0,4).forEach((p, i) => el.querySelector('#p'+i).value = p);
+        upd();
+      });
+      el.querySelector('#f-cancel').onclick = close;
+      const err = el.querySelector('#f-err');
+      el.querySelector('#f-save').onclick = async e => {
+        const x = read(), ev = evalMatch(x), ps = [...x.a, ...x.b];
+        if(!x.datum) return err.textContent = 'Bitte ein Datum wählen.';
+        if(ps.some(p => !p)) return err.textContent = 'Bitte alle vier Spieler eintragen.';
+        if(new Set(ps.map(p => p.toLowerCase())).size < 4) return err.textContent = 'Ein Spieler steht doppelt drin.';
+        if(!ev.res) return err.textContent = 'Bitte mindestens einen Satz eintragen.';
+        if(x.sets.some(s => (s[0]===null) !== (s[1]===null))) return err.textContent = 'Ein Satz ist nur halb ausgefüllt.';
+        if(await run(e.target, err, pin => api('saveMatch', x, pin))){ close(); toast('Ergebnis gespeichert'); }
+      };
+      const del = el.querySelector('#f-del');
+      if(del) del.onclick = async e => {
+        if(del.dataset.sure !== '1'){ del.dataset.sure = '1'; del.textContent = 'Wirklich löschen?'; return; }
+        if(await run(e.target, err, pin => api('deleteMatch', m.id, pin))){ close(); toast('Spiel gelöscht'); }
+      };
+    });
+}
+
+function dayForm(datum, act, p){
+  const d = DATA.schedule.find(x => x.datum === datum);
+  const busy = new Set([...d.spieler, ...d.abgemeldet]);
+  const cands = allNames().filter(n => !busy.has(n));
+  const subs = [...SUBS.filter(n => cands.includes(n)), ...cands.filter(n => !SUBS.includes(n))];
+  let title, body;
+  if(act === 'out'){ title = `${esc(p)} am ${fmtLong(datum)}`; body = `<p class="muted small" style="margin:0">Abmelden (krank, verhindert). Optional direkt einen Ersatz eintragen.</p>`; }
+  else if(act === 'in'){ title = `${esc(p)} wieder dabei?`; body = `<p class="muted small" style="margin:0">${fmtLong(datum)}. ${d.spieler.length >= 4 ? 'Achtung: Es sind schon 4 Spieler eingeteilt, wähle wer dafür rausgeht.' : ''}</p>`; }
+  else { title = `Ersatz für ${fmtLong(datum)}`; body = ''; }
+  const subField = act !== 'in' ? `<label>${act==='add'?'Ersatzspieler':'Ersatz (optional)'}</label><input list="subs" id="d-sub" placeholder="Name, z. B. Flo">
+    <datalist id="subs">${subs.map(n => `<option value="${esc(n)}">`).join('')}</datalist>` : '';
+  const outField = act === 'in' && d.spieler.length >= 4 ? `<label>Wer geht raus?</label><select id="d-out">${d.spieler.map(n => `<option>${esc(n)}</option>`).join('')}</select>` : '';
+  openSheet(`<h2>${title}</h2>${body}${subField}${outField}${pinField()}<div class="err" id="d-err"></div>
+    <div class="btns"><button class="btn" id="d-cancel">Abbrechen</button>
+    <button class="btn primary" id="d-ok">${act==='out'?'Abmelden':act==='in'?'Wieder anmelden':'Eintragen'}</button></div>`, (el, close) => {
+    el.querySelector('#d-cancel').onclick = close;
+    const err = el.querySelector('#d-err');
+    el.querySelector('#d-ok').onclick = async e => {
+      let sp = d.spieler.slice(), ab = d.abgemeldet.slice();
+      const sub = el.querySelector('#d-sub')?.value.trim();
+      if(sub && busy.has(sub)) return err.textContent = `${sub} ist an dem Tag schon eingetragen.`;
+      if(act === 'out'){ sp = sp.filter(x => x !== p); ab.push(p); if(sub) sp.push(sub); }
+      else if(act === 'add'){ if(!sub) return err.textContent = 'Bitte einen Namen eintragen.'; sp.push(sub); }
+      else { ab = ab.filter(x => x !== p); const o = el.querySelector('#d-out')?.value; if(o) sp = sp.filter(x => x !== o); sp.push(p); }
+      if(await run(e.target, err, pin => api('saveDay', datum, sp, ab, pin))){ close(); toast('Spielplan aktualisiert'); }
+    };
+  });
+}
+
+/* ---------- Events ---------- */
+$('#nav').onclick = e => { const t = e.target.closest('button'); if(!t) return; TAB = t.dataset.tab; store.set('tab', TAB); render(); window.scrollTo(0,0); };
+$('#me').onchange = e => { ME = e.target.value; store.set('me', ME); render(); };
+$('#fab').onclick = () => matchForm(null);
+$('#main').onclick = e => {
+  const st = e.target.closest('.stilbtn'); if(st){ document.documentElement.dataset.style = st.dataset.stil; return render(); }
+  const m = e.target.closest('.match'); if(m) return matchForm(DATA.matches.find(x => x.id === m.dataset.id));
+  const c = e.target.closest('.chip'); if(c) return dayForm(c.closest('.day').dataset.date, c.dataset.act, c.dataset.p);
+};
+
+async function load(){
+  try{ DATA = await api('getData'); render(); if(TAB==='plan'){ const n=document.querySelector('.day.next'); n && n.scrollIntoView({block:'center'}); } }
+  catch(e){ const c = LIVE && store.get('cache', null); if(c){ DATA = c; render(); toast('Offline: zeige letzten Stand'); return; }
+    $('#main').innerHTML = `<div class="card empty">Daten konnten nicht geladen werden.<br><small>${esc(e.message)}</small></div>`; }
+}
+const STYLE = new URLSearchParams(location.search).get('stil') || CFG.style || '';
+if(STYLE) document.documentElement.dataset.style = STYLE;
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && LIVE && !document.querySelector('.overlay')) load(); });
+if(LIVE && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+load();
+</script>
+</body>
+</html>
