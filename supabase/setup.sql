@@ -16,7 +16,8 @@ create table if not exists public.matches (
 create table if not exists public.schedule (
   datum date primary key,
   spieler text[] not null default '{}',
-  abgemeldet text[] not null default '{}'
+  abgemeldet text[] not null default '{}',
+  typ text not null default 'doppel'
 );
 
 create table if not exists public.app_secret (

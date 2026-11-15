@@ -113,6 +113,9 @@ td.pts{font-weight:700;font-size:18px;font-family:var(--fhead);font-variant-nume
 .note{grid-column:1/-1;font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px;margin-top:4px}
 .notice{background:var(--soft);border-left:3px solid var(--win);padding:8px 10px;border-radius:8px;font-size:14px;margin-bottom:4px}
 .gast{margin-top:6px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:4px}
+.seg button{font:inherit;font-size:14px;font-weight:600;padding:7px 16px;border:0;background:var(--card);color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
 .teams .t select{margin-top:6px;background:var(--card);padding:9px 6px;font-size:15px}
 textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%;resize:vertical}
 .lg{display:block;margin-top:4px}
@@ -186,7 +189,7 @@ const Demo = {
   db(){
     let d = store.get('demo', null);
     if(!d){
-      d = { schedule: SEED.map(([datum, sp]) => ({datum, spieler: sp.slice(), abgemeldet: []})), matches: [
+      d = { schedule: SEED.map(([datum, sp]) => ({datum, spieler: sp.slice(), abgemeldet: [], typ: 'doppel'})), matches: [
         {id:'d1', datum:'2026-09-28', a:['Norbert','Matthias'], b:['Sebastian','Frank'], sets:[[6,4],[3,6],[10,7]]},
         {id:'d2', datum:'2026-10-05', a:['Matthias','Alex'], b:['Sebastian','Frank'], sets:[[4,6],[2,6],[null,null]]},
         {id:'d3', datum:'2026-10-12', a:['Norbert','Alex'], b:['Sebastian','Frank'], sets:[[6,3],[5,7],[null,null]]},
@@ -219,11 +222,11 @@ const Live = {
   async getData(){
     const [ms, sc] = await Promise.all([
       this.req('matches?select=*&order=datum.asc,created_at.asc'),
-      this.req('schedule?select=datum,spieler,abgemeldet&order=datum.asc')
+      this.req('schedule?select=*&order=datum.asc')
     ]);
     const data = {
       matches: ms.map(r => ({id: r.id, datum: r.datum, a: [r.a1, r.a2], b: [r.b1, r.b2], sets: r.sets || [], notiz: r.notiz || ''})),
-      schedule: sc.map(r => ({datum: r.datum, spieler: r.spieler || [], abgemeldet: r.abgemeldet || []}))
+      schedule: sc.map(r => ({datum: r.datum, spieler: r.spieler || [], abgemeldet: r.abgemeldet || [], typ: r.typ || 'doppel'}))
     };
     store.set('cache', data);
     return data;
@@ -323,7 +326,7 @@ function matchHTML(m){
   const e = evalMatch(m);
   const team = (t, side) => {
     const w = e.res === side, d = e.res === 'D';
-    return `<div class="team ${w?'w':''}">${t.map(esc).join(' / ')}${w?'<span class="tag w">Sieg</span>':''}${d&&side==='A'?'<span class="tag d">Remis</span>':''}</div>`;
+    return `<div class="team ${w?'w':''}">${t.filter(Boolean).map(esc).join(' / ')}${w?'<span class="tag w">Sieg</span>':''}${d&&side==='A'?'<span class="tag d">Remis</span>':''}</div>`;
   };
   const sets = (side) => `<div class="sets">${m.sets.filter(s => num(s[0])!==null && num(s[1])!==null).map(s => {
     const v = side==='A'?s[0]:s[1], o = side==='A'?s[1]:s[0];
@@ -354,6 +357,7 @@ function viewPlan(){
   + sched.map(d => {
     const dt = pd(d.datum);
     const cls = d === next ? 'next' : d.datum < today ? 'past' : '';
+    const need = d.typ === 'einzel' ? 2 : 4;
     const n = d.spieler.length;
     const reg = SEED.find(s => s[0] === d.datum)?.[1] || [];
     const res = resultOf(d.datum)[0];
@@ -364,8 +368,9 @@ function viewPlan(){
       <div class="chips">
         ${d.spieler.map(p => `<button class="chip ${p===ME?'me':''} ${reg.includes(p)?'':'sub'}" data-act="out" data-p="${esc(p)}">${esc(p)}</button>`).join('')}
         ${d.abgemeldet.map(p => `<button class="chip off" data-act="in" data-p="${esc(p)}">${esc(p)}</button>`).join('')}
-        ${n < 4 ? `<button class="chip add" data-act="add">+ Ersatz</button>` : ''}
-        ${n < 4 ? `<div class="warn">${4-n} Platz${4-n>1?'e':''} frei, Ersatz gesucht</div>` : ''}
+        ${n < need ? `<button class="chip add" data-act="add">+ Ersatz</button>` : ''}
+        ${d.typ === 'einzel' ? `<div class="cnt">Einzel</div>` : ''}
+        ${n < need ? `<div class="warn">${need-n} Platz${need-n>1?'e':''} frei, Ersatz gesucht</div>` : ''}
         ${sr ? `<div class="dres"><b>${esc(sr.who)}</b> · ${esc(sr.sets)}${res.notiz ? ' 😉' : ''}</div>` : ''}
       </div>
       <button class="resbtn ${res?'done':''}" data-act="result" aria-label="${res?'Ergebnis ansehen oder ändern':'Ergebnis eintragen'}">${res?'✓':'+'}</button></div>`;
@@ -414,7 +419,8 @@ function shortResult(m){
   const e = evalMatch(m);
   const flip = e.res === 'B';
   const sets = m.sets.filter(s => num(s[0])!==null && num(s[1])!==null).map(s => flip ? `${s[1]}:${s[0]}` : `${s[0]}:${s[1]}`).join(' ');
-  const who = e.res === 'D' ? 'Unentschieden' : `${(e.res==='A'?m.a:m.b).join(' / ')} gewinnen`;
+  const win = (e.res==='A'?m.a:m.b).filter(Boolean);
+  const who = e.res === 'D' ? 'Unentschieden' : `${win.join(' / ')} ${win.length > 1 ? 'gewinnen' : 'gewinnt'}`;
   return {sets, who};
 }
 
@@ -422,6 +428,7 @@ function matchForm(m, opts = {}){
   const datum = m ? m.datum : (opts.datum || defaultDate());
   if(!m){ const ex = resultOf(datum)[0]; if(ex) m = ex; }
   const isNew = !m;
+  let typ = m ? (m.a[1] || m.b[1] ? 'doppel' : 'einzel') : (DATA.schedule.find(d => d.datum === datum)?.typ || 'doppel');
   const day = DATA.schedule.find(d => d.datum === datum);
   const pre = m ? [...m.a, ...m.b] : ['', '', '', ''];
   const sets = m ? m.sets : [[null,null],[null,null],[null,null]];
@@ -430,11 +437,12 @@ function matchForm(m, opts = {}){
     <h2>${isNew ? 'Ergebnis eintragen' : 'Ergebnis ändern'}</h2>
     <div class="notice" id="f-exist" hidden></div>
     <label>Datum</label><input id="f-date" type="date" value="${datum}">
-    <label>Paarungen</label>
+    <div class="seg" id="f-typ"><button type="button" data-typ="doppel">Doppel</button><button type="button" data-typ="einzel">Einzel</button></div>
+    <label id="f-plab">Paarungen</label>
     <div class="teams">
       ${[['A',0,1],['B',2,3]].map(([t,x,y]) => `<div class="t"><b>Team ${t}</b>${[x,y].map(i => `<select id="p${i}" class="psel"></select><input id="p${i}g" class="gast" placeholder="Name des Gasts" hidden>`).join('')}</div>`).join('')}
     </div>
-    <label>Sätze (Team A : Team B)</label>
+    <label>Sätze (A : B)</label>
     <div class="setgrid">
       ${[0,1,2].map(i => `<span>${i<2 ? (i+1)+'. Satz' : 'MTB / 3.'}</span>
         <input inputmode="numeric" pattern="[0-9]*" id="s${i}a" value="${v(sets[i]?.[0])}" placeholder="–">
@@ -457,7 +465,7 @@ function matchForm(m, opts = {}){
       const name = i => chosen[i] === GAST ? $$('#p'+i+'g').value.trim() : chosen[i];
       const read = () => ({
         id: m ? m.id : '', datum: $$('#f-date').value,
-        a: [name(0), name(1)], b: [name(2), name(3)],
+        a: [name(0), typ === 'einzel' ? '' : name(1)], b: [name(2), typ === 'einzel' ? '' : name(3)],
         sets: [0,1,2].map(i => [num($$(`#s${i}a`).value), num($$(`#s${i}b`).value)]),
         notiz: $$('#f-note').value.trim()
       });
@@ -466,7 +474,9 @@ function matchForm(m, opts = {}){
       const chosen = pre.map(n => !n ? '' : (allNames().includes(n) || (curDay && curDay.spieler.includes(n))) ? n : GAST);
       pre.forEach((n, i) => { if(chosen[i] === GAST) $$('#p'+i+'g').value = n; });
       const refresh = () => {
-        const empty = [0,1,2,3].filter(i => !chosen[i]);
+        if(typ === 'einzel'){ chosen[1] = ''; chosen[3] = ''; }
+        const slots = typ === 'einzel' ? [0,2] : [0,1,2,3];
+        const empty = slots.filter(i => !chosen[i]);
         if(empty.length === 1 && curDay){
           const left = curDay.spieler.filter(n => !chosen.includes(n));
           if(left.length === 1) chosen[empty[0]] = left[0];
@@ -475,14 +485,15 @@ function matchForm(m, opts = {}){
           const sel = $$('#p'+i);
           sel.innerHTML = playerOptions(i, chosen, curDay);
           $$('#p'+i+'g').hidden = chosen[i] !== GAST;
+          sel.hidden = typ === 'einzel' && (i === 1 || i === 3);
         });
       };
       const syncSelects = refresh;
       const upd = () => {
         const x = read(), e = evalMatch(x);
         $$('#f-res').textContent = !e.res ? 'Noch kein Satz eingetragen'
-          : e.res === 'D' ? `Unentschieden (${e.sa}:${e.sb} Sätze), je 1 Punkt`
-          : `Sieg ${(e.res==='A'?x.a:x.b).filter(Boolean).join(' / ') || 'Team '+e.res} (${Math.max(e.sa,e.sb)}:${Math.min(e.sa,e.sb)} Sätze), je 2 Punkte`;
+          : e.res === 'D' ? `Unentschieden (${e.sa}:${e.sb} Sätze), ${typ==="einzel"?"jeder":"je"} 1 Punkt`
+          : `Sieg ${(e.res==='A'?x.a:x.b).filter(Boolean).join(' / ') || 'Team '+e.res} (${Math.max(e.sa,e.sb)}:${Math.min(e.sa,e.sb)} Sätze), 2 Punkte${typ==="einzel"?"":" pro Spieler"}`;
         const ex = others()[0] || (!isNew ? m : null);
         const box = $$('#f-exist');
         if(ex){ const r = shortResult(ex); box.hidden = false; box.innerHTML = `✓ Für diesen Termin ist schon ein Ergebnis eingetragen: <b>${esc(r.who)}</b> ${esc(r.sets)}. Speichern überschreibt es.`; }
@@ -503,10 +514,17 @@ function matchForm(m, opts = {}){
           else if(dst.dataset.auto === '1'){ dst.value = ''; dst.dataset.auto = ''; }
         });
       }));
+      const setTyp = () => {
+        el.querySelectorAll('#f-typ button').forEach(b => b.classList.toggle('on', b.dataset.typ === typ));
+        $$('#f-plab').textContent = typ === 'einzel' ? 'Spieler' : 'Paarungen';
+        el.querySelectorAll('.teams .t b').forEach((b, k) => b.textContent = typ === 'einzel' ? (k ? 'Spieler B' : 'Spieler A') : (k ? 'Team B' : 'Team A'));
+      };
+      $$('#f-typ').onclick = e => { const b = e.target.closest('button'); if(!b) return; typ = b.dataset.typ; setTyp(); refresh(); upd(); };
+      setTyp();
       el.addEventListener('input', upd); bindSelects(); syncSelects(); upd();
       $$('#f-date').addEventListener('change', e => {
         curDay = DATA.schedule.find(s => s.datum === e.target.value);
-        if(isNew) chosen.fill('');
+        if(isNew){ chosen.fill(''); typ = curDay?.typ || typ; setTyp(); }
         refresh(); confirmed = false; upd();
       });
       $$('#f-cancel').onclick = close;
@@ -514,8 +532,9 @@ function matchForm(m, opts = {}){
       save.onclick = async e => {
         const x = read(), ev = evalMatch(x), ps = [...x.a, ...x.b];
         if(!x.datum) return err.textContent = 'Bitte ein Datum wählen.';
-        if(ps.some(p => !p)) return err.textContent = 'Bitte alle vier Spieler auswählen.';
-        if(new Set(ps.map(p => p.toLowerCase())).size < 4) return err.textContent = 'Ein Spieler steht doppelt drin.';
+        const want = typ === 'einzel' ? 2 : 4; const pl = ps.filter(Boolean);
+        if(pl.length < want) return err.textContent = typ === 'einzel' ? 'Bitte beide Spieler auswählen.' : 'Bitte alle vier Spieler auswählen.';
+        if(new Set(pl.map(p => p.toLowerCase())).size < want) return err.textContent = 'Ein Spieler steht doppelt drin.';
         if(!ev.res) return err.textContent = 'Bitte mindestens einen Satz eintragen.';
         if(x.sets.some(s => (s[0]===null) !== (s[1]===null))) return err.textContent = 'Ein Satz ist nur halb ausgefüllt.';
         const dup = others();
