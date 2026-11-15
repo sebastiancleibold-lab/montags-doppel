@@ -587,7 +587,12 @@ function dayForm(datum, act, p){
 }
 
 /* ---------- Events ---------- */
-$('#nav').onclick = e => { const t = e.target.closest('button'); if(!t) return; TAB = t.dataset.tab; store.set('tab', TAB); render(); window.scrollTo(0,0); };
+function scrollToNext(){
+  const n = document.querySelector('.day.next'); if(!n) return;
+  const h = document.querySelector('header').offsetHeight;
+  window.scrollTo(0, n.getBoundingClientRect().top + window.scrollY - h - 10);
+}
+$('#nav').onclick = e => { const t = e.target.closest('button'); if(!t) return; TAB = t.dataset.tab; store.set('tab', TAB); render(); window.scrollTo(0,0); if(TAB==='plan') scrollToNext(); };
 $('#me').onchange = e => { ME = e.target.value; store.set('me', ME); render(); };
 $('#main').onclick = e => {
   const st = e.target.closest('.stilbtn'); if(st){ document.documentElement.dataset.style = st.dataset.stil; return render(); }
@@ -597,7 +602,7 @@ $('#main').onclick = e => {
 };
 
 async function load(){
-  try{ DATA = await api('getData'); render(); if(TAB==='plan'){ const n=document.querySelector('.day.next'); n && n.scrollIntoView({block:'center'}); } }
+  try{ DATA = await api('getData'); render(); if(TAB==='plan' && !document.querySelector('.overlay')) scrollToNext(); }
   catch(e){ const c = LIVE && store.get('cache', null); if(c){ DATA = c; render(); toast('Offline: zeige letzten Stand'); return; }
     $('#main').innerHTML = `<div class="card empty">Daten konnten nicht geladen werden.<br><small>${esc(e.message)}</small></div>`; }
 }
