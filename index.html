@@ -171,9 +171,9 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 <datalist id="names"></datalist>
 
 <script>
-const REGULARS = ['Norbert','Phil','Matthias','Sebastian','Frank','Alex'];
+const REGULARS = ['Norbert','Phil','Nussi','Sebastian','Frank','Alex'];
 const SUBS = ['Flo','Volker','Niko'];
-const SEED = [["2026-09-28",["Norbert","Matthias","Sebastian","Frank"]],["2026-10-05",["Matthias","Sebastian","Frank","Alex"]],["2026-10-12",["Norbert","Sebastian","Frank","Alex"]],["2026-10-19",["Norbert","Phil","Matthias","Alex"]],["2026-10-26",["Phil","Matthias","Sebastian","Frank"]],["2026-11-02",["Norbert","Sebastian","Frank","Alex"]],["2026-11-09",["Norbert","Phil","Matthias","Sebastian"]],["2026-11-16",["Phil","Matthias","Frank","Alex"]],["2026-11-23",["Norbert","Phil","Sebastian","Alex"]],["2026-11-30",["Norbert","Matthias","Sebastian","Frank"]],["2026-12-07",["Phil","Matthias","Frank","Alex"]],["2026-12-14",["Norbert","Phil","Sebastian","Alex"]],["2026-12-21",["Norbert","Matthias","Frank","Alex"]],["2026-12-28",["Norbert","Phil","Sebastian","Frank"]],["2027-01-04",["Phil","Matthias","Sebastian","Alex"]],["2027-01-11",["Norbert","Matthias","Sebastian","Frank"]],["2027-01-18",["Phil","Matthias","Sebastian","Alex"]],["2027-01-25",["Norbert","Phil","Matthias","Frank"]],["2027-02-01",["Norbert","Sebastian","Frank","Alex"]],["2027-02-08",["Norbert","Phil","Matthias","Sebastian"]],["2027-02-15",["Phil","Matthias","Frank","Alex"]],["2027-02-22",["Norbert","Sebastian","Frank","Alex"]],["2027-03-01",["Phil","Matthias","Sebastian","Frank"]],["2027-03-08",["Norbert","Phil","Matthias","Alex"]],["2027-03-15",["Norbert","Matthias","Sebastian","Frank"]],["2027-03-22",["Phil","Sebastian","Frank","Alex"]],["2027-03-29",["Norbert","Matthias","Sebastian","Alex"]],["2027-04-05",["Norbert","Phil","Frank","Alex"]],["2027-04-12",["Matthias","Sebastian","Frank","Alex"]],["2027-04-19",["Norbert","Phil","Matthias","Sebastian"]]];
+const SEED = [["2026-09-28",["Norbert","Nussi","Sebastian","Frank"]],["2026-10-05",["Nussi","Sebastian","Frank","Alex"]],["2026-10-12",["Norbert","Sebastian","Frank","Alex"]],["2026-10-19",["Norbert","Phil","Nussi","Alex"]],["2026-10-26",["Phil","Nussi","Sebastian","Frank"]],["2026-11-02",["Norbert","Sebastian","Frank","Alex"]],["2026-11-09",["Norbert","Phil","Nussi","Sebastian"]],["2026-11-16",["Phil","Nussi","Frank","Alex"]],["2026-11-23",["Norbert","Phil","Sebastian","Alex"]],["2026-11-30",["Norbert","Nussi","Sebastian","Frank"]],["2026-12-07",["Phil","Nussi","Frank","Alex"]],["2026-12-14",["Norbert","Phil","Sebastian","Alex"]],["2026-12-21",["Norbert","Nussi","Frank","Alex"]],["2026-12-28",["Norbert","Phil","Sebastian","Frank"]],["2027-01-04",["Phil","Nussi","Sebastian","Alex"]],["2027-01-11",["Norbert","Nussi","Sebastian","Frank"]],["2027-01-18",["Phil","Nussi","Sebastian","Alex"]],["2027-01-25",["Norbert","Phil","Nussi","Frank"]],["2027-02-01",["Norbert","Sebastian","Frank","Alex"]],["2027-02-08",["Norbert","Phil","Nussi","Sebastian"]],["2027-02-15",["Phil","Nussi","Frank","Alex"]],["2027-02-22",["Norbert","Sebastian","Frank","Alex"]],["2027-03-01",["Phil","Nussi","Sebastian","Frank"]],["2027-03-08",["Norbert","Phil","Nussi","Alex"]],["2027-03-15",["Norbert","Nussi","Sebastian","Frank"]],["2027-03-22",["Phil","Sebastian","Frank","Alex"]],["2027-03-29",["Norbert","Nussi","Sebastian","Alex"]],["2027-04-05",["Norbert","Phil","Frank","Alex"]],["2027-04-12",["Nussi","Sebastian","Frank","Alex"]],["2027-04-19",["Norbert","Phil","Nussi","Sebastian"]]];
 
 /* ---------- Speicher (lokal) ---------- */
 const store = {
@@ -190,10 +190,10 @@ const Demo = {
     let d = store.get('demo', null);
     if(!d){
       d = { schedule: SEED.map(([datum, sp]) => ({datum, spieler: sp.slice(), abgemeldet: [], typ: 'doppel'})), matches: [
-        {id:'d1', datum:'2026-09-28', a:['Norbert','Matthias'], b:['Sebastian','Frank'], sets:[[6,4],[3,6],[10,7]]},
-        {id:'d2', datum:'2026-10-05', a:['Matthias','Alex'], b:['Sebastian','Frank'], sets:[[4,6],[2,6],[null,null]]},
+        {id:'d1', datum:'2026-09-28', a:['Norbert','Nussi'], b:['Sebastian','Frank'], sets:[[6,4],[3,6],[10,7]]},
+        {id:'d2', datum:'2026-10-05', a:['Nussi','Alex'], b:['Sebastian','Frank'], sets:[[4,6],[2,6],[null,null]]},
         {id:'d3', datum:'2026-10-12', a:['Norbert','Alex'], b:['Sebastian','Frank'], sets:[[6,3],[5,7],[null,null]]},
-        {id:'d4', datum:'2026-11-09', a:['Norbert','Sebastian'], b:['Phil','Matthias'], sets:[[7,5],[6,4],[null,null]]},
+        {id:'d4', datum:'2026-11-09', a:['Norbert','Sebastian'], b:['Phil','Nussi'], sets:[[7,5],[6,4],[null,null]]},
       ]};
       store.set('demo', d);
     }
