@@ -173,6 +173,8 @@ input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);b
 
 <script>
 const REGULARS = ['Norbert','Phil','Nussi','Sebastian','Frank','Alex'];
+const ALIAS = {Matthias: 'Nussi'};
+const al = n => ALIAS[n] || n;
 const SUBS = ['Flo','Volker','Niko'];
 const SEED = [["2026-09-28",["Norbert","Nussi","Sebastian","Frank"]],["2026-10-05",["Nussi","Sebastian","Frank","Alex"]],["2026-10-12",["Norbert","Sebastian","Frank","Alex"]],["2026-10-19",["Norbert","Phil","Nussi","Alex"]],["2026-10-26",["Phil","Nussi","Sebastian","Frank"]],["2026-11-02",["Norbert","Sebastian","Frank","Alex"]],["2026-11-09",["Norbert","Phil","Nussi","Sebastian"]],["2026-11-16",["Phil","Nussi","Frank","Alex"]],["2026-11-23",["Norbert","Phil","Sebastian","Alex"]],["2026-11-30",["Norbert","Nussi","Sebastian","Frank"]],["2026-12-07",["Phil","Nussi","Frank","Alex"]],["2026-12-14",["Norbert","Phil","Sebastian","Alex"]],["2026-12-21",["Norbert","Nussi","Frank","Alex"]],["2026-12-28",["Norbert","Phil","Sebastian","Frank"]],["2027-01-04",["Phil","Nussi","Sebastian","Alex"]],["2027-01-11",["Norbert","Nussi","Sebastian","Frank"]],["2027-01-18",["Phil","Nussi","Sebastian","Alex"]],["2027-01-25",["Norbert","Phil","Nussi","Frank"]],["2027-02-01",["Norbert","Sebastian","Frank","Alex"]],["2027-02-08",["Norbert","Phil","Nussi","Sebastian"]],["2027-02-15",["Phil","Nussi","Frank","Alex"]],["2027-02-22",["Norbert","Sebastian","Frank","Alex"]],["2027-03-01",["Phil","Nussi","Sebastian","Frank"]],["2027-03-08",["Norbert","Phil","Nussi","Alex"]],["2027-03-15",["Norbert","Nussi","Sebastian","Frank"]],["2027-03-22",["Phil","Sebastian","Frank","Alex"]],["2027-03-29",["Norbert","Nussi","Sebastian","Alex"]],["2027-04-05",["Norbert","Phil","Frank","Alex"]],["2027-04-12",["Nussi","Sebastian","Frank","Alex"]],["2027-04-19",["Norbert","Phil","Nussi","Sebastian"]]];
 
@@ -226,8 +228,8 @@ const Live = {
       this.req('schedule?select=*&order=datum.asc')
     ]);
     const data = {
-      matches: ms.map(r => ({id: r.id, datum: r.datum, a: [r.a1, r.a2], b: [r.b1, r.b2], sets: r.sets || [], notiz: r.notiz || ''})),
-      schedule: sc.map(r => ({datum: r.datum, spieler: r.spieler || [], abgemeldet: r.abgemeldet || [], typ: r.typ || 'doppel'}))
+      matches: ms.map(r => ({id: r.id, datum: r.datum, a: [al(r.a1), al(r.a2)], b: [al(r.b1), al(r.b2)], sets: r.sets || [], notiz: r.notiz || ''})),
+      schedule: sc.map(r => ({datum: r.datum, spieler: (r.spieler || []).map(al), abgemeldet: (r.abgemeldet || []).map(al), typ: r.typ || 'doppel'}))
     };
     store.set('cache', data);
     return data;
