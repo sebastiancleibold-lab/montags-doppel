@@ -113,6 +113,7 @@ td.pts{font-weight:700;font-size:18px;font-family:var(--fhead);font-variant-nume
 .note{grid-column:1/-1;font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px;margin-top:4px}
 .notice{background:var(--soft);border-left:3px solid var(--win);padding:8px 10px;border-radius:8px;font-size:14px;margin-bottom:4px}
 .gast{margin-top:6px}
+.train{font-size:12px;font-weight:600;color:var(--draw)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:4px}
 .seg button{font:inherit;font-size:14px;font-weight:600;padding:7px 16px;border:0;background:var(--card);color:var(--muted);cursor:pointer}
 .seg button.on{background:var(--accent);color:var(--accent-ink)}
@@ -270,7 +271,9 @@ function evalMatch(m){
   return {sa, sb, ga, gb, res, played};
 }
 
+const isEinzel = m => !m.a[1] && !m.b[1];
 function standings(matches){
+  matches = matches.filter(m => !isEinzel(m));
   const t = {};
   const row = n => t[n] ||= {name:n, sp:0, s:0, u:0, n:0, pts:0, sw:0, sl:0, gw:0, gl:0};
   matches.forEach(m => {
@@ -311,7 +314,8 @@ function render(){
 function viewTable(){
   const st = standings(DATA.matches);
   if(!st.length) return `<div class="card empty">Noch keine Ergebnisse.<br>Ergebnisse trägst du im Spielplan über das lila ＋ beim jeweiligen Termin ein.</div>`;
-  const played = DATA.matches.filter(m => evalMatch(m).res).length;
+  const played = DATA.matches.filter(m => evalMatch(m).res && !isEinzel(m)).length;
+  const einzel = DATA.matches.filter(isEinzel).length;
   return `<div class="card" style="padding:6px 10px 12px">
     <table><thead><tr><th>#</th><th>Spieler</th><th>Sp</th><th>S-U-N</th><th>Sätze</th><th>Spiele</th><th>Pkt</th></tr></thead><tbody>
     ${st.map((r, i) => `<tr class="${r.name===ME?'mine':''} ${i===0?'rank1':''}">
@@ -319,7 +323,7 @@ function viewTable(){
       <td>${sign(r.sw-r.sl)}</td><td>${sign(r.gw-r.gl)}</td><td class="pts">${r.pts}</td></tr>`).join('')}
     </tbody></table>
     <div class="legend">${played} Matches gewertet. Sieg 2 Punkte, Unentschieden 1, Niederlage 0 (je Spieler).
-    Bei Punktgleichheit entscheiden Satz-, dann Spieldifferenz. Ein Match-Tie-Break zählt als 1 Spiel.</div></div>`;
+    Bei Punktgleichheit entscheiden Satz-, dann Spieldifferenz. Ein Match-Tie-Break zählt als 1 Spiel.<br>Einzel gelten als Training und zählen nicht für die Tabelle${einzel ? ` (${einzel} Einzel eingetragen)` : ''}.</div></div>`;
 }
 
 function matchHTML(m){
@@ -331,7 +335,7 @@ function matchHTML(m){
   const sets = (side) => `<div class="sets">${m.sets.filter(s => num(s[0])!==null && num(s[1])!==null).map(s => {
     const v = side==='A'?s[0]:s[1], o = side==='A'?s[1]:s[0];
     return `<span class="${v>o?'w':''}">${v}</span>`; }).join('')}</div>`;
-  return `<div class="card match" data-id="${esc(m.id)}">${team(m.a,'A')}${sets('A')}${team(m.b,'B')}${sets('B')}${m.notiz ? `<div class="note">😉 ${esc(m.notiz)}</div>` : ''}</div>`;
+  return `<div class="card match" data-id="${esc(m.id)}">${isEinzel(m) ? '<div class="train" style="grid-column:1/-1">Einzel · Training, zählt nicht für die Tabelle</div>' : ''}${team(m.a,'A')}${sets('A')}${team(m.b,'B')}${sets('B')}${m.notiz ? `<div class="note">😉 ${esc(m.notiz)}</div>` : ''}</div>`;
 }
 
 function viewMatches(){
@@ -371,7 +375,7 @@ function viewPlan(){
         ${n < need ? `<button class="chip add" data-act="add">+ Ersatz</button>` : ''}
         ${d.typ === 'einzel' ? `<div class="cnt">Einzel</div>` : ''}
         ${n < need ? `<div class="warn">${need-n} Platz${need-n>1?'e':''} frei, Ersatz gesucht</div>` : ''}
-        ${sr ? `<div class="dres"><b>${esc(sr.who)}</b> · ${esc(sr.sets)}${res.notiz ? ' 😉' : ''}</div>` : ''}
+        ${sr ? `<div class="dres"><b>${esc(sr.who)}</b> · ${esc(sr.sets)}${res.notiz ? ' 😉' : ''}${isEinzel(res) ? '<br><span class="train">Training, zählt nicht für die Tabelle</span>' : ''}</div>` : ''}
       </div>
       <button class="resbtn ${res?'done':''}" data-act="result" aria-label="${res?'Ergebnis ansehen oder ändern':'Ergebnis eintragen'}">${res?'✓':'+'}</button></div>`;
   }).join('');
@@ -491,7 +495,7 @@ function matchForm(m, opts = {}){
       const syncSelects = refresh;
       const upd = () => {
         const x = read(), e = evalMatch(x);
-        $$('#f-res').textContent = !e.res ? 'Noch kein Satz eingetragen'
+        $$('#f-res').textContent = typ === 'einzel' ? (!e.res ? 'Einzel: zählt als Training, nicht für die Tabelle' : `${e.res === 'D' ? 'Unentschieden' : 'Sieg ' + (e.res==='A'?x.a:x.b)[0]} (${Math.max(e.sa,e.sb)}:${Math.min(e.sa,e.sb)} Sätze), Training, zählt nicht für die Tabelle`) : !e.res ? 'Noch kein Satz eingetragen'
           : e.res === 'D' ? `Unentschieden (${e.sa}:${e.sb} Sätze), ${typ==="einzel"?"jeder":"je"} 1 Punkt`
           : `Sieg ${(e.res==='A'?x.a:x.b).filter(Boolean).join(' / ') || 'Team '+e.res} (${Math.max(e.sa,e.sb)}:${Math.min(e.sa,e.sb)} Sätze), 2 Punkte${typ==="einzel"?"":" pro Spieler"}`;
         const ex = others()[0] || (!isNew ? m : null);
