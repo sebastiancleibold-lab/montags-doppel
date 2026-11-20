@@ -2,6 +2,9 @@ import { loadImage, detectQuad, warp, rotate, applyFilter, canvasToBlob, makeCan
 import { recognize, analyse, buildName, todayIso, findSignatureSpots, placeSignature, boxFor } from './ocr.js';
 import { buildPdf } from './pdf.js';
 import * as db from './db.js';
+import { loadPdfPages, stampPdf } from './pdfin.js';
+import * as drive from './drive.js';
+import { getCats, setCats, resetCats, suggestCategory, learn } from './cats.js';
 
 const $ = s => document.querySelector(s);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -108,7 +111,22 @@ let docsCache = [];
 async function refreshList() {
   try { docsCache = await db.allDocs(); } catch (e) { docsCache = []; toast('Speicher nicht verfügbar: ' + e.message); }
   docsCache.sort((a, b) => b.updated - a.updated);
+  if (catFilter && !docsCache.some(d => d.category === catFilter)) catFilter = '';
+  renderCatbar();
   renderList();
+}
+let catFilter = '';
+function renderCatbar() {
+  const bar = $('#catbar');
+  const used = [...new Set(docsCache.map(d => d.category).filter(Boolean))];
+  bar.classList.toggle('hidden', used.length < 2);
+  bar.innerHTML = '';
+  for (const c of ['', ...getCats().map(c => c.name).filter(n => used.includes(n))]) {
+    const b = document.createElement('button');
+    b.textContent = c || 'Alle'; b.className = c === catFilter ? 'on' : '';
+    b.onclick = () => { catFilter = c; renderCatbar(); renderList(); };
+    bar.appendChild(b);
+  }
 }
 function renderList() {
   const q = $('#q').value.trim().toLowerCase();
@@ -116,7 +134,7 @@ function renderList() {
   list.innerHTML = '';
   for (const u of list._urls || []) URL.revokeObjectURL(u);
   list._urls = [];
-  const items = docsCache.filter(d => !q || d.name.toLowerCase().includes(q) || (d.text || '').toLowerCase().includes(q));
+  const items = docsCache.filter(d => (!catFilter || d.category === catFilter)).filter(d => !q || d.name.toLowerCase().includes(q) || (d.text || '').toLowerCase().includes(q));
   if (!docsCache.length) {
     list.innerHTML = `<div class="empty"><b>Noch keine Dokumente</b>Tippe auf „Scannen“, fotografiere ein Blatt und die App schneidet es automatisch zu.</div>`;
     return;
@@ -134,7 +152,7 @@ function renderList() {
       hit = `<div class="hit">…${esc(s).replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), m => `<mark>${m}</mark>`)}…</div>`;
     }
     const dt = new Date(d.updated).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    el.innerHTML = `<img src="${url}" alt=""><div class="meta"><div class="name">${esc(d.name)}</div><div class="sub">${d.pages.length} ${d.pages.length === 1 ? 'Seite' : 'Seiten'} · ${dt}</div>${hit}</div>
+    el.innerHTML = `<img src="${url}" alt=""><div class="meta"><div class="name">${esc(d.name)}</div><div class="sub">${d.category ? `<span class="tag">${esc(d.category)}</span>` : ''}${d.pages.length} ${d.pages.length === 1 ? 'Seite' : 'Seiten'} · ${dt}${d.drive ? ' · in Drive' : ''}</div>${hit}</div>
       <button class="icon-btn" aria-label="Teilen"><svg class="i"><use href="#i-share"/></svg></button>`;
     el.querySelector('button').onclick = e => { e.stopPropagation(); sharePdf(d.pdf, d.name); };
     el.onclick = () => openDoc(d.id);
@@ -198,6 +216,24 @@ async function addFiles(files, askCrop) {
   }
   busy(false);
   openEdit();
+}
+async function addFromPdf() {
+  const files = await pickFiles($('#inPdf'));
+  if (!files.length) return;
+  const f = files[0];
+  busy('PDF wird geöffnet…'); await nextFrame();
+  try {
+    const pages = await loadPdfPages(f, (i, n) => busy(`PDF wird geöffnet (Seite ${i}/${n})…`, i / n));
+    doc = { id: uid(), created: Date.now(), fields: null, kind: 'pdf', original: f, srcName: f.name, isNew: true,
+      pages: pages.map((p, i) => ({ ...p, id: uid(), idx: i, marks: [] })) };
+    doc.pages.forEach(setUrl);
+    cur = 0; dirty = true;
+    busy(false);
+    openEdit();
+  } catch (e) {
+    busy(false); doc = null;
+    toast('PDF konnte nicht geöffnet werden: ' + e.message, 5000);
+  }
 }
 const fullQuad = c => [{ x: 0, y: 0 }, { x: c.width, y: 0 }, { x: c.width, y: c.height }, { x: 0, y: c.height }];
 
@@ -282,7 +318,9 @@ function cropUI(canvas, quad, { detected = true, title = 'Ecken anpassen', hint 
 // ---------- Bearbeiten ----------
 function openEdit() {
   show('edit');
-  $('#editTitle').textContent = doc.isNew ? 'Neuer Scan' : (doc.name || 'Dokument');
+  const isPdf = doc.kind === 'pdf';
+  $('#editTitle').textContent = doc.isNew ? (isPdf ? doc.srcName : 'Neuer Scan') : (doc.name || 'Dokument');
+  for (const id of ['#filters', '#tCrop', '#tRot', '#tDel']) $(id).classList.toggle('hidden', isPdf);
   renderFilters();
   renderEditPage();
   renderThumbs();
@@ -346,7 +384,7 @@ function renderThumbs() {
     const v = await menu([{ label: 'Weitere Seite fotografieren', value: 'cam', icon: 'i-cam' }, { label: 'Aus Fotos hinzufügen', value: 'imp', icon: 'i-img' }]);
     if (v === 'cam') addFromCamera(); else if (v === 'imp') addFromImport();
   };
-  box.appendChild(add);
+  if (doc.kind !== 'pdf') box.appendChild(add);
   const on = box.querySelector('.on'); if (on) on.scrollIntoView({ inline: 'nearest', block: 'nearest' });
 }
 new ResizeObserver(() => { if (current === 'edit' && doc) renderEditPage(); }).observe($('#pageWrap'));
@@ -627,12 +665,23 @@ let lastPdf = null;
 async function openSave() {
   if (!doc.pages.length) return;
   await ensureOcr(doc.pages, 'Text wird erkannt');
-  if (!doc.fields) doc.fields = analyse(doc.pages.map(p => p.ocr));
+  if (!doc.fields) {
+    doc.fields = analyse(doc.pages.map(p => p.ocr));
+    if (doc.kind === 'pdf' && !doc.fields.title) doc.fields.title = doc.srcName.replace(/\.pdf$/i, '');
+  }
+  const allText = doc.pages.map(p => p.ocr ? p.ocr.text : '').join('\n');
+  doc.suggestedCat = suggestCategory(allText, doc.fields.title);
+  const cats = getCats().map(c => c.name);
+  const cat = doc.category || doc.suggestedCat;
+  $('#fCat').innerHTML = [...new Set([...cats, cat].filter(Boolean))].map(c => `<option>${esc(c)}</option>`).join('');
+  $('#fCat').value = cat;
+  $('#shareLbl').textContent = doc.kind === 'pdf' ? 'Teilen (z. B. per Mail zurück)' : 'Teilen / In Dateien sichern';
   show('save');
   $('#fDate').value = doc.fields.date || todayIso();
   $('#fTitle').value = doc.fields.title || '';
   $('#fAmount').value = doc.fields.amount || '';
   const found = [doc.fields.date && 'Datum', doc.fields.title && 'Titel', doc.fields.amount && 'Betrag'].filter(Boolean);
+  if (found.length || doc.suggestedCat) found.push('Kategorie');
   $('#fInfo').textContent = found.length ? `Aus dem Dokument gelesen: ${found.join(', ')}. Bitte kurz prüfen.` : 'Nichts Eindeutiges erkannt, bitte ausfüllen.';
   updName();
   $('#saveActions').classList.remove('hidden');
@@ -641,7 +690,7 @@ async function openSave() {
 }
 function readFields() { return { date: $('#fDate').value, title: $('#fTitle').value, amount: $('#fAmount').value }; }
 function updName() { $('#fName').textContent = buildName(readFields()); }
-for (const id of ['#fDate', '#fTitle', '#fAmount']) $(id).addEventListener('input', () => { updName(); $('#saveActions').classList.remove('hidden'); $('#shareActions').classList.add('hidden'); });
+for (const id of ['#fDate', '#fTitle', '#fAmount', '#fCat']) $(id).addEventListener('input', () => { updName(); $('#saveActions').classList.remove('hidden'); $('#shareActions').classList.add('hidden'); });
 $('#saveBack').onclick = () => { doc.fields = readFields(); openEdit(); };
 
 async function finalJpeg(p) {
@@ -666,7 +715,13 @@ $('#btnSave').onclick = async () => {
   // doppelte Namen vermeiden
   const others = (await db.allDocs()).filter(d => d.id !== doc.id).map(d => d.name);
   if (others.includes(name)) { let k = 2; while (others.includes(name.replace(/\.pdf$/, `-${k}.pdf`))) k++; name = name.replace(/\.pdf$/, `-${k}.pdf`); }
+  const category = $('#fCat').value;
   try {
+    let pdf;
+    if (doc.kind === 'pdf') {
+      busy('Unterschrift wird ins PDF gesetzt…'); await nextFrame();
+      pdf = await stampPdf(doc.original, doc.pages, cfg.color);
+    } else {
     const pages = [];
     for (let i = 0; i < doc.pages.length; i++) {
       busy(`PDF wird erstellt (Seite ${i + 1}/${doc.pages.length})…`, i / doc.pages.length); await nextFrame();
@@ -674,27 +729,55 @@ $('#btnSave').onclick = async () => {
       pages.push({ jpeg: await finalJpeg(p), w: p.vw, h: p.vh, ocr: p.ocr });
     }
     busy('PDF wird erstellt…', 1); await nextFrame();
-    const pdf = await buildPdf(pages, name.replace(/\.pdf$/, ''));
-    const tc = await loadImage(pages[0].jpeg, 240);
+    pdf = await buildPdf(pages, name.replace(/\.pdf$/, ''));
+    }
+    const tc = await loadImage(doc.kind === 'pdf' ? await finalJpeg(doc.pages[0]) : doc.pages[0].view, 240);
+    if (category && category !== doc.suggestedCat) learn(fields.title, category);
     const record = {
-      id: doc.id, created: doc.created, updated: Date.now(), name, fields,
+      id: doc.id, created: doc.created, updated: Date.now(), name, fields, category, kind: doc.kind || 'scan',
+      original: doc.original, srcName: doc.srcName, drive: doc.drive || null,
       text: doc.pages.map(p => p.ocr ? p.ocr.text : '').join('\n'),
       thumb: await canvasToBlob(tc, 'image/jpeg', 0.8), pdf,
       pages: doc.pages.map(({ url, ...rest }) => rest),
     };
     await db.putDoc(record);
     db.persist();
-    doc.isNew = false; doc.name = name; doc.fields = fields; dirty = false;
-    lastPdf = { blob: pdf, name };
+    doc.isNew = false; doc.name = name; doc.fields = fields; doc.category = category; dirty = false;
+    lastPdf = { blob: pdf, name, record };
     busy(false);
     $('#saveActions').classList.add('hidden');
     $('#shareActions').classList.remove('hidden');
     $('#fName').textContent = name;
-    toast('Gespeichert');
+    $('#btnDrive').classList.toggle('hidden', !drive.driveConfigured());
+    $('#btnDrive').disabled = false;
+    if (drive.driveConfigured() && drive.driveCfg.auto && drive.hasToken()) await toDrive();
+    else toast('Gespeichert');
   } catch (e) {
     busy(false);
     toast('Speichern fehlgeschlagen: ' + e.message, 5000);
   }
+};
+async function toDrive() {
+  if (!lastPdf) return;
+  const { blob, name, record } = lastPdf;
+  busy('Wird in Google Drive hochgeladen…'); await nextFrame();
+  try {
+    const res = await drive.upload(blob, name, record.category, record.drive);
+    record.drive = res; doc && (doc.drive = res);
+    await db.putDoc(record);
+    busy(false);
+    $('#btnDrive').disabled = true;
+    toast(`In Google Drive: ${drive.driveCfg.root}/${record.category || ''}`);
+  } catch (e) {
+    busy(false);
+    toast('Upload fehlgeschlagen: ' + e.message, 5000);
+  }
+}
+$('#btnDrive').onclick = async () => {
+  if (!drive.hasToken()) {
+    try { await drive.signIn(); } catch (e) { toast(e.message, 4000); return; }
+  }
+  toDrive();
 };
 async function sharePdf(blob, name) {
   if (!blob) return toast('Kein PDF vorhanden');
@@ -721,6 +804,9 @@ function openSettings() {
   $('#sigDelete').classList.toggle('hidden', !s);
   for (const b of $('#sigColor').children) b.classList.toggle('on', b.dataset.c === cfg.color);
   $('#setCity').value = cfg.city; $('#setPrefer').value = cfg.prefer; $('#setAutoDate').checked = cfg.autoDate;
+  renderCatList();
+  $('#setClientId').value = drive.driveCfg.clientId; $('#setRoot').value = drive.driveCfg.root; $('#setAuto').checked = drive.driveCfg.auto;
+  updDrive();
   const sel = $('#setFilter'); sel.innerHTML = FILTERS.map(f => `<option value="${f.id}">${f.name}</option>`).join(''); sel.value = cfg.filter;
   if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(e => {
     $('#storageInfo').textContent = `Alle Dokumente bleiben auf diesem Gerät (${(e.usage / 1048576).toFixed(1)} MB belegt).`;
@@ -734,6 +820,54 @@ $('#setAutoDate').onchange = e => store.set('autoDate', e.target.checked);
 $('#setFilter').onchange = e => store.set('filter', e.target.value);
 $('#sigDraw').onclick = async () => { await drawSignature(); openSettings(); };
 $('#sigPhoto').onclick = async () => { await photoSignature(); openSettings(); };
+$('#sigImage').onclick = async () => {
+  const files = await pickFiles($('#inSigImg'));
+  if (!files.length) return;
+  busy('Bild wird verarbeitet…'); await nextFrame();
+  try {
+    const c = await loadImage(files[0], 1600);
+    const g = c.getContext('2d', { willReadFrequently: true });
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    let transparent = 0;
+    for (let i = 3; i < d.length; i += 16) if (d[i] < 200) transparent++;
+    let sig;
+    if (transparent > d.length / 16 * 0.2) { // freigestelltes PNG: Transparenz direkt nutzen
+      const A = new Uint8ClampedArray(c.width * c.height);
+      for (let i = 0; i < A.length; i++) { const j = i * 4, dark = 255 - (d[j] + d[j + 1] + d[j + 2]) / 3; A[i] = d[j + 3] * Math.min(1, dark / 60 + 0.2); }
+      sig = alphaToSignature(A, c.width, c.height, cfg.color);
+    } else sig = extractSignature(c, cfg.color);
+    busy(false);
+    if (!sig) return toast('Keine Unterschrift im Bild gefunden');
+    saveSig(sig); toast('Unterschrift gespeichert');
+  } catch (e) { busy(false); toast('Bild konnte nicht gelesen werden'); }
+  openSettings();
+};
+function renderCatList() {
+  const box = $('#catList'); box.innerHTML = '';
+  const cats = getCats();
+  cats.forEach((c, i) => {
+    const row = document.createElement('div'); row.className = 'catrow';
+    row.innerHTML = `<input class="n" value="${esc(c.name)}" placeholder="Name"><input class="k" value="${esc(c.kw)}" placeholder="Stichwörter, mit Komma"><button class="icon-btn" aria-label="Entfernen"><svg class="i"><use href="#i-trash"/></svg></button>`;
+    const [n, k] = row.querySelectorAll('input');
+    n.onchange = () => { const cs = getCats(); cs[i].name = n.value.trim() || cs[i].name; setCats(cs); };
+    k.onchange = () => { const cs = getCats(); cs[i].kw = k.value; setCats(cs); };
+    row.querySelector('button').onclick = () => { const cs = getCats(); cs.splice(i, 1); setCats(cs); renderCatList(); };
+    box.appendChild(row);
+  });
+}
+$('#catAdd').onclick = () => { const cs = getCats(); cs.push({ name: 'Neue Kategorie', kw: '' }); setCats(cs); renderCatList(); };
+$('#catReset').onclick = () => { if (confirm('Kategorien auf Standard zurücksetzen?')) { resetCats(); renderCatList(); } };
+function updDrive() {
+  const conf = drive.driveConfigured(), tok = drive.hasToken();
+  $('#driveState').textContent = !conf ? 'Nicht eingerichtet: Client-ID eintragen (Anleitung bekommst du von mir).' : tok ? `Verbunden. Ablage: ${drive.driveCfg.root}/<Kategorie>` : 'Eingerichtet, aber nicht angemeldet. Die Anmeldung gilt jeweils ca. 1 Stunde; danach fragt die App beim Hochladen erneut.';
+  $('#driveIn').classList.toggle('hidden', !conf || tok);
+  $('#driveOut').classList.toggle('hidden', !tok);
+}
+$('#setClientId').onchange = e => { drive.driveCfg.clientId = e.target.value.trim(); drive.preload(); updDrive(); };
+$('#setRoot').onchange = e => { drive.driveCfg.root = e.target.value.trim() || 'Scanner'; };
+$('#setAuto').onchange = e => { drive.driveCfg.auto = e.target.checked; };
+$('#driveIn').onclick = async () => { try { await drive.signIn(); toast('Mit Google Drive verbunden'); } catch (e) { toast(e.message, 4000); } updDrive(); };
+$('#driveOut').onclick = () => { drive.signOut(); updDrive(); };
 $('#sigDelete').onclick = () => { if (confirm('Unterschrift löschen?')) { localStorage.removeItem('sc_sig'); openSettings(); } };
 $('#sigColor').onclick = async e => {
   const c = e.target.dataset && e.target.dataset.c; if (!c) return;
@@ -751,6 +885,8 @@ $('#sigColor').onclick = async e => {
 // ---------- Start ----------
 $('#btnScan').onclick = () => { doc = null; addFromCamera(); };
 $('#btnImport').onclick = () => { doc = null; addFromImport(); };
+$('#btnPdf').onclick = () => { doc = null; addFromPdf(); };
+drive.preload();
 refreshList();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });

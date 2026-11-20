@@ -58,6 +58,14 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 .doc .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
 .doc .hit { color: var(--muted); font-size: 12px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .doc .hit mark { background: #ffe58a; color: #222; border-radius: 3px; }
+.catbar { display: flex; gap: 6px; padding: 0 14px 8px; overflow-x: auto; scrollbar-width: none; }
+.catbar button { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--muted); }
+.catbar button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); margin-right: 4px; vertical-align: 1px; }
+.catrow { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; }
+.catrow input { padding: 9px 10px; border-radius: 9px; border: 1px solid var(--line); background: var(--bg); min-width: 0; font-size: 14px; }
+.catrow input.n { flex: 0 0 34%; font-weight: 600; }
+.catrow input.k { flex: 1; }
 .empty { text-align: center; color: var(--muted); padding: 60px 30px; }
 .empty b { color: var(--ink); display: block; font-size: 18px; margin-bottom: 6px; }
 .fabbar { position: fixed; left: 0; right: 0; bottom: 0; padding: 14px 16px calc(var(--sb) + 14px); display: flex; gap: 10px; background: linear-gradient(transparent, var(--bg) 35%); }
@@ -158,6 +166,8 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v13M7 8l5-5 5 5"/><path d="M5 12v8h14v-8"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-full" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="i-pdf" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 17h4"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z"/></symbol>
   <symbol id="i-pen" viewBox="0 0 24 24"><path d="M17 3l4 4L8 20H4v-4z"/></symbol>
 </svg>
 
@@ -165,9 +175,11 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 <section id="home" class="view">
   <div class="top"><h1>Scanner</h1><button class="icon-btn" id="btnSettings" aria-label="Einstellungen"><svg class="i"><use href="#i-gear"/></svg></button></div>
   <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="q" type="search" placeholder="Dokumente und Text durchsuchen" autocomplete="off"></div>
+  <div class="catbar" id="catbar"></div>
   <div id="list"></div>
   <div class="fabbar">
     <button class="btn sec" id="btnImport" aria-label="Aus Fotos importieren"><svg class="i"><use href="#i-img"/></svg></button>
+    <button class="btn sec" id="btnPdf" aria-label="PDF öffnen"><svg class="i"><use href="#i-pdf"/></svg>PDF</button>
     <button class="btn primary" id="btnScan"><svg class="i"><use href="#i-cam"/></svg>Scannen</button>
   </div>
 </section>
@@ -218,6 +230,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
       <label class="field"><span>Datum</span><input type="date" id="fDate"></label>
       <label class="field"><span>Titel (Aussteller, Inhalt)</span><input id="fTitle" placeholder="z. B. Telekom" autocapitalize="words"></label>
       <label class="field"><span>Betrag brutto in € (leer lassen, wenn keiner)</span><input id="fAmount" inputmode="decimal" placeholder="z. B. 23,95"></label>
+      <label class="field"><span>Kategorie</span><select id="fCat"></select></label>
       <div class="fname" id="fName"></div>
       <p class="small" id="fInfo"></p>
     </div>
@@ -225,7 +238,8 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
       <button class="btn primary" id="btnSave">Speichern</button>
     </div>
     <div class="row hidden" id="shareActions" style="margin-top:4px">
-      <button class="btn primary" id="btnShare"><svg class="i"><use href="#i-share"/></svg>Teilen / In Dateien sichern</button>
+      <button class="btn primary" id="btnShare"><svg class="i"><use href="#i-share"/></svg><span id="shareLbl">Teilen / In Dateien sichern</span></button>
+      <button class="btn hidden" id="btnDrive"><svg class="i"><use href="#i-cloud"/></svg>In Google Drive hochladen</button>
       <button class="btn" id="btnDownload">Herunterladen</button>
       <button class="btn" id="btnHome">Zur Übersicht</button>
     </div>
@@ -242,6 +256,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
       <div class="row">
         <button class="btn" id="sigDraw"><svg class="i"><use href="#i-pen"/></svg>Zeichnen</button>
         <button class="btn" id="sigPhoto"><svg class="i"><use href="#i-cam"/></svg>Von Papier</button>
+        <button class="btn" id="sigImage"><svg class="i"><use href="#i-img"/></svg>Bild</button>
       </div>
       <div style="margin-top:12px" class="seg" id="sigColor"><button data-c="#14286e">Blau</button><button data-c="#111111">Schwarz</button></div>
       <button class="btn danger hidden" id="sigDelete" style="width:100%;margin-top:8px">Unterschrift löschen</button>
@@ -251,6 +266,20 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
       <label class="field"><span>Ort für „Ort, Datum“</span><input id="setCity" placeholder="z. B. München"></label>
       <label class="field"><span>Bevorzugtes Feld, wenn mehrere da sind (Stichwort)</span><input id="setPrefer" placeholder="z. B. Vermieter oder Mieter"></label>
       <label class="check"><input type="checkbox" id="setAutoDate">Ort und Datum automatisch dazusetzen</label>
+    </div>
+    <div class="card">
+      <h2>Kategorien</h2>
+      <p class="small" style="margin-top:-4px">Die App ordnet über Stichwörter zu. Korrigierst du die Kategorie beim Speichern, merkt sie sich den Absender.</p>
+      <div id="catList"></div>
+      <div class="row"><button class="btn" id="catAdd"><svg class="i"><use href="#i-plus"/></svg>Kategorie</button><button class="btn danger" id="catReset">Standard</button></div>
+    </div>
+    <div class="card">
+      <h2>Google Drive</h2>
+      <p class="small" style="margin-top:-4px" id="driveState">Nicht eingerichtet.</p>
+      <label class="field"><span>Google Client-ID (einmalig, siehe Anleitung)</span><input id="setClientId" placeholder="….apps.googleusercontent.com" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+      <label class="field"><span>Hauptordner in Drive (Kategorien werden Unterordner)</span><input id="setRoot" placeholder="Scanner"></label>
+      <label class="check"><input type="checkbox" id="setAuto">Nach dem Speichern automatisch hochladen</label>
+      <div class="row" style="margin-top:6px"><button class="btn" id="driveIn">Bei Google anmelden</button><button class="btn danger hidden" id="driveOut">Abmelden</button></div>
     </div>
     <div class="card">
       <h2>Scannen</h2>
@@ -275,6 +304,9 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 <input type="file" accept="image/*" capture="environment" id="inCam" class="vh">
 <input type="file" accept="image/*" multiple id="inImp" class="vh">
 <input type="file" accept="image/*" capture="environment" id="inSig" class="vh">
+<input type="file" accept="image/*" id="inSigImg" class="vh">
+<input type="file" accept="application/pdf,.pdf" id="inPdf" class="vh">
+<script src="config.js"></script>
 
 <script type="module" src="app.js"></script>
 </body>

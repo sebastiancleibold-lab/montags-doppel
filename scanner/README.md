@@ -7,6 +7,9 @@ Eigener Dokumenten-Scanner als Web-App (PWA), läuft komplett auf dem Handy – 
 - Texterkennung (Tesseract, Deutsch) lokal im Browser: PDFs sind durchsuchbar, die Übersicht durchsucht auch den Text.
 - Dateiname nach `YYYYMMDD_Titel_Betrag.pdf`, Datum/Titel/Betrag werden aus dem Beleg vorgeschlagen (München → `MUC`, Leipzig → `LPZ`).
 - Unterschrift einmal hinterlegen (zeichnen oder von Papier fotografieren, Hintergrund wird entfernt). Die App sucht Felder wie „Unterschrift …“ und „Ort, Datum“ und setzt beides als Vorschlag, den man verschieben kann.
+- PDFs öffnen (z. B. aus Mail über „In Dateien sichern“), Unterschrift wird ins Original-PDF gestempelt (Text bleibt erhalten).
+- Kategorien per Stichwort, lernt Korrekturen je Absender; Filter in der Übersicht.
+- Optional Upload nach Google Drive (`drive.file`-Zugriff, Ordner `Scanner/<Kategorie>`), Client-ID in den Einstellungen oder `config.js`.
 - Teilen über das Teilen-Menü (z. B. „In Dateien sichern“, Mail, Google Drive).
 
-Bibliotheken liegen in `vendor/` (tesseract.js 5, tesseract.js-core, deu.traineddata, pdf-lib), damit nichts von fremden Servern geladen wird.
+Bibliotheken liegen in `vendor/` (tesseract.js 5, tesseract.js-core, deu.traineddata, pdf-lib, pdf.js 3.11 legacy), damit nichts von fremden Servern geladen wird.
