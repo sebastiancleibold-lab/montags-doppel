@@ -1,5 +1,5 @@
 // Service Worker: App offline nutzbar. App-Dateien: erst Netz, dann Cache. Bibliotheken (vendor/): aus dem Cache.
-const CACHE = 'scanner-v2';
+const CACHE = 'scanner-v3';
 const FILES = ['./', './index.html', './app.js', './imgproc.js', './ocr.js', './pdf.js', './db.js', './pdfin.js', './drive.js', './cats.js', './config.js', './manifest.webmanifest', './icons/icon-192.png'];
 const VENDOR = ['./vendor/tesseract.min.js', './vendor/worker.min.js', './vendor/pdf-lib.min.js', './vendor/lang/deu.traineddata.gz'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => caches.open('scanner-vendor-1')).then(c => c.addAll(VENDOR).catch(() => {}))); self.skipWaiting(); });

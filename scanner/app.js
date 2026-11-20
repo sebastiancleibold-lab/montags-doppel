@@ -43,7 +43,7 @@ function menu(items) {
     for (const it of items) {
       const b = document.createElement('button');
       b.innerHTML = (it.icon ? `<svg class="i"><use href="#${it.icon}"/></svg>` : '') + it.label;
-      b.onclick = e => { e.stopPropagation(); close(it.value); };
+      b.onclick = e => { e.stopPropagation(); close(it.run ? it.run() : it.value); }; // run: direkt im Tipp (für Dateiauswahl/Zwischenablage)
       box.appendChild(b);
     }
     const c = document.createElement('button'); c.className = 'cancel'; c.textContent = 'Abbrechen'; c.onclick = () => close(null); box.appendChild(c);
@@ -217,9 +217,9 @@ async function addFiles(files, askCrop) {
   busy(false);
   openEdit();
 }
-async function addFromPdf() {
-  const files = await pickFiles($('#inPdf'));
-  if (!files.length) return;
+async function addFromPdf(filesPromise) {
+  const files = await (filesPromise || pickFiles($('#inPdf')));
+  if (!files || !files.length) return;
   const f = files[0];
   busy('PDF wird geöffnet…'); await nextFrame();
   try {
@@ -234,6 +234,33 @@ async function addFromPdf() {
     busy(false); doc = null;
     toast('PDF konnte nicht geöffnet werden: ' + e.message, 5000);
   }
+}
+// PDF aus der Zwischenablage (vom iOS-Kurzbefehl als Base64-Text kopiert)
+async function pdfFromClipboard(textPromise) {
+  let text;
+  try { text = await textPromise; } catch { toast('Kein Zugriff auf die Zwischenablage. Bitte bei „Einfügen“ tippen.', 4000); return null; }
+  text = (text || '').trim();
+  let name = 'Dokument.pdf';
+  const m = text.match(/^SCANPDF\|([^|]*)\|/);
+  if (m) { name = m[1] || name; text = text.slice(m[0].length); }
+  text = text.replace(/\s+/g, '').replace(/^data:application\/pdf;base64,/, '');
+  if (!/^JVBER/.test(text)) { toast('In der Zwischenablage ist kein PDF. Erst den Kurzbefehl „In Scanner“ im Teilen-Menü ausführen.', 5000); return null; }
+  try {
+    const bin = atob(text), bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    if (!/\.pdf$/i.test(name)) name += '.pdf';
+    return [new File([bytes], name, { type: 'application/pdf' })];
+  } catch { toast('PDF in der Zwischenablage ist beschädigt'); return null; }
+}
+async function pdfMenu() {
+  const v = await menu([
+    { label: 'Aus Zwischenablage (Kurzbefehl)', icon: 'i-pdf', run: () => ({ clip: navigator.clipboard && navigator.clipboard.readText ? navigator.clipboard.readText() : Promise.reject() }) },
+    { label: 'Aus Dateien wählen', icon: 'i-img', run: () => ({ files: pickFiles($('#inPdf')) }) },
+  ]);
+  if (!v) return;
+  doc = null;
+  if (v.clip) addFromPdf(pdfFromClipboard(v.clip));
+  else addFromPdf(v.files);
 }
 const fullQuad = c => [{ x: 0, y: 0 }, { x: c.width, y: 0 }, { x: c.width, y: c.height }, { x: 0, y: c.height }];
 
@@ -381,8 +408,7 @@ function renderThumbs() {
   add.className = 'thumb add'; add.setAttribute('aria-label', 'Seite hinzufügen');
   add.innerHTML = '<svg class="i"><use href="#i-plus"/></svg>';
   add.onclick = async () => {
-    const v = await menu([{ label: 'Weitere Seite fotografieren', value: 'cam', icon: 'i-cam' }, { label: 'Aus Fotos hinzufügen', value: 'imp', icon: 'i-img' }]);
-    if (v === 'cam') addFromCamera(); else if (v === 'imp') addFromImport();
+    await menu([{ label: 'Weitere Seite fotografieren', icon: 'i-cam', run: () => addFromCamera() }, { label: 'Aus Fotos hinzufügen', icon: 'i-img', run: () => addFromImport() }]);
   };
   if (doc.kind !== 'pdf') box.appendChild(add);
   const on = box.querySelector('.on'); if (on) on.scrollIntoView({ inline: 'nearest', block: 'nearest' });
@@ -447,9 +473,9 @@ async function ensureOcr(pages, label) {
 let signState = null;
 async function openSign() {
   if (!cfg.sig) {
-    const v = await menu([{ label: 'Unterschrift zeichnen', value: 'draw', icon: 'i-pen' }, { label: 'Unterschrift von Papier fotografieren', value: 'photo', icon: 'i-cam' }]);
+    const v = await menu([{ label: 'Unterschrift zeichnen', value: 'draw', icon: 'i-pen' }, { label: 'Unterschrift von Papier fotografieren', icon: 'i-cam', run: () => ({ photo: pickFiles($('#inSig')) }) }]);
     if (!v) return;
-    const ok = v === 'draw' ? await drawSignature() : await photoSignature();
+    const ok = v === 'draw' ? await drawSignature() : await photoSignature(v.photo);
     if (!ok) { openEdit(); return; }
   }
   await ensureOcr(doc.pages, 'Suche Unterschriftsfeld');
@@ -640,8 +666,8 @@ function drawSignature() {
     };
   });
 }
-async function photoSignature() {
-  const files = await pickFiles($('#inSig'));
+async function photoSignature(filesPromise) {
+  const files = await (filesPromise || pickFiles($('#inSig')));
   if (!files.length) return false;
   busy('Foto wird geladen…'); await nextFrame();
   const c = await loadImage(files[0], 2000);
@@ -885,7 +911,7 @@ $('#sigColor').onclick = async e => {
 // ---------- Start ----------
 $('#btnScan').onclick = () => { doc = null; addFromCamera(); };
 $('#btnImport').onclick = () => { doc = null; addFromImport(); };
-$('#btnPdf').onclick = () => { doc = null; addFromPdf(); };
+$('#btnPdf').onclick = pdfMenu;
 drive.preload();
 refreshList();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
