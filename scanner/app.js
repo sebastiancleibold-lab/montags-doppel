@@ -114,6 +114,10 @@ async function refreshList() {
   if (catFilter && !docsCache.some(d => d.category === catFilter)) catFilter = '';
   renderCatbar();
   renderList();
+  const pend = drive.driveConfigured() ? docsCache.filter(d => d.drivePending).length : 0;
+  const bn = $('#syncBanner');
+  bn.classList.toggle('hidden', !pend);
+  bn.textContent = `☁︎ ${pend} ${pend === 1 ? 'Dokument wartet' : 'Dokumente warten'} auf Google Drive – jetzt hochladen`;
 }
 let catFilter = '';
 function renderCatbar() {
@@ -735,7 +739,16 @@ async function finalJpeg(p) {
   return canvasToBlob(c, 'image/jpeg', 0.85);
 }
 
+const wantDrive = () => drive.driveConfigured() && drive.driveCfg.auto;
+// Google-Anmeldung muss direkt im Tipp starten (Popup), deshalb vor allem anderen
+function startSignInIfNeeded() {
+  if (!drive.driveConfigured() || drive.hasToken()) return null;
+  const p = drive.signIn();
+  p.catch(() => {});
+  return p;
+}
 $('#btnSave').onclick = async () => {
+  const signInP = wantDrive() ? startSignInIfNeeded() : null;
   const fields = readFields();
   let name = buildName(fields);
   // doppelte Namen vermeiden
@@ -761,7 +774,7 @@ $('#btnSave').onclick = async () => {
     if (category && category !== doc.suggestedCat) learn(fields.title, category);
     const record = {
       id: doc.id, created: doc.created, updated: Date.now(), name, fields, category, kind: doc.kind || 'scan',
-      original: doc.original, srcName: doc.srcName, drive: doc.drive || null,
+      original: doc.original, srcName: doc.srcName, drive: doc.drive || null, drivePending: wantDrive(),
       text: doc.pages.map(p => p.ocr ? p.ocr.text : '').join('\n'),
       thumb: await canvasToBlob(tc, 'image/jpeg', 0.8), pdf,
       pages: doc.pages.map(({ url, ...rest }) => rest),
@@ -776,8 +789,10 @@ $('#btnSave').onclick = async () => {
     $('#fName').textContent = name;
     $('#btnDrive').classList.toggle('hidden', !drive.driveConfigured());
     $('#btnDrive').disabled = false;
-    if (drive.driveConfigured() && drive.driveCfg.auto && drive.hasToken()) await toDrive();
-    else toast('Gespeichert');
+    if (wantDrive()) {
+      if (signInP) { busy('Google-Anmeldung…'); try { await signInP; } catch (e) { busy(false); toast('Gespeichert. Für Drive bitte „In Google Drive hochladen“ tippen.', 4500); return; } }
+      await toDrive();
+    } else toast('Gespeichert');
   } catch (e) {
     busy(false);
     toast('Speichern fehlgeschlagen: ' + e.message, 5000);
@@ -789,7 +804,7 @@ async function toDrive() {
   busy('Wird in Google Drive hochgeladen…'); await nextFrame();
   try {
     const res = await drive.upload(blob, name, record.category, record.drive);
-    record.drive = res; doc && (doc.drive = res);
+    record.drive = res; record.drivePending = false; doc && (doc.drive = res);
     await db.putDoc(record);
     busy(false);
     $('#btnDrive').disabled = true;
@@ -800,11 +815,26 @@ async function toDrive() {
   }
 }
 $('#btnDrive').onclick = async () => {
-  if (!drive.hasToken()) {
-    try { await drive.signIn(); } catch (e) { toast(e.message, 4000); return; }
-  }
+  const p = startSignInIfNeeded();
+  if (p) { try { await p; } catch (e) { toast(e.message, 4000); return; } }
   toDrive();
 };
+// Alle noch nicht hochgeladenen Dokumente nachholen
+async function syncPending() {
+  const p = startSignInIfNeeded();
+  if (p) { try { await p; } catch (e) { toast(e.message, 4000); return; } }
+  const pend = (await db.allDocs()).filter(d => d.drivePending && d.pdf);
+  let ok = 0;
+  for (let i = 0; i < pend.length; i++) {
+    const d = pend[i];
+    busy(`Google Drive: ${i + 1} von ${pend.length}…`, i / pend.length); await nextFrame();
+    try { d.drive = await drive.upload(d.pdf, d.name, d.category, d.drive); d.drivePending = false; await db.putDoc(d); ok++; }
+    catch (e) { busy(false); toast('Upload fehlgeschlagen: ' + e.message, 5000); break; }
+  }
+  busy(false);
+  if (ok) toast(`${ok} ${ok === 1 ? 'Dokument' : 'Dokumente'} in Google Drive abgelegt`);
+  refreshList();
+}
 async function sharePdf(blob, name) {
   if (!blob) return toast('Kein PDF vorhanden');
   const file = new File([blob], name, { type: 'application/pdf' });
@@ -885,14 +915,14 @@ $('#catAdd').onclick = () => { const cs = getCats(); cs.push({ name: 'Neue Kateg
 $('#catReset').onclick = () => { if (confirm('Kategorien auf Standard zurücksetzen?')) { resetCats(); renderCatList(); } };
 function updDrive() {
   const conf = drive.driveConfigured(), tok = drive.hasToken();
-  $('#driveState').textContent = !conf ? 'Nicht eingerichtet: Client-ID eintragen (Anleitung bekommst du von mir).' : tok ? `Verbunden. Ablage: ${drive.driveCfg.root}/<Kategorie>` : 'Eingerichtet, aber nicht angemeldet. Die Anmeldung gilt jeweils ca. 1 Stunde; danach fragt die App beim Hochladen erneut.';
+  $('#driveState').textContent = !conf ? 'Nicht eingerichtet: Client-ID eintragen (Anleitung bekommst du von mir).' : tok ? `Verbunden. Ablage: ${drive.driveCfg.root}/<Kategorie>` : 'Eingerichtet. Beim Speichern meldet sich die App bei Bedarf kurz bei Google an (gilt jeweils ca. 1 Stunde).';
   $('#driveIn').classList.toggle('hidden', !conf || tok);
   $('#driveOut').classList.toggle('hidden', !tok);
 }
 $('#setClientId').onchange = e => { drive.driveCfg.clientId = e.target.value.trim(); drive.preload(); updDrive(); };
 $('#setRoot').onchange = e => { drive.driveCfg.root = e.target.value.trim() || 'Scanner'; };
 $('#setAuto').onchange = e => { drive.driveCfg.auto = e.target.checked; };
-$('#driveIn').onclick = async () => { try { await drive.signIn(); toast('Mit Google Drive verbunden'); } catch (e) { toast(e.message, 4000); } updDrive(); };
+$('#driveIn').onclick = async () => { try { await drive.signIn(); toast('Mit Google Drive verbunden'); } catch (e) { toast(e.message, 4000); } updDrive(); if (drive.hasToken() && (await db.allDocs()).some(d => d.drivePending)) syncPending(); };
 $('#driveOut').onclick = () => { drive.signOut(); updDrive(); };
 $('#sigDelete').onclick = () => { if (confirm('Unterschrift löschen?')) { localStorage.removeItem('sc_sig'); openSettings(); } };
 $('#sigColor').onclick = async e => {
@@ -912,6 +942,7 @@ $('#sigColor').onclick = async e => {
 $('#btnScan').onclick = () => { doc = null; addFromCamera(); };
 $('#btnImport').onclick = () => { doc = null; addFromImport(); };
 $('#btnPdf').onclick = pdfMenu;
+$('#syncBanner').onclick = syncPending;
 drive.preload();
 refreshList();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
