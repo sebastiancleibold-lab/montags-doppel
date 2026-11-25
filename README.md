@@ -9,4 +9,4 @@ Kleine Web-App (PWA) für unser Montags-Doppel, Wintersaison 2026/27: Ergebnisse
 
 ## Weitere Apps im Repo
 - `scanner/`: Dokumenten-Scanner (PWA).
-- `memory/`: Luisen Memory, Bilder-Memory mit 4×5 Karten (10 Paare), jede Runde neu aus dem Bilderfundus gemischt. Fotos werden in der App hochgeladen (Supabase-Bucket `memory`, Einrichtung: `supabase/memory.sql`, eigene Memory-PIN) und automatisch auf Gesichter/Motive zugeschnitten. Elternbereich (Fundus, Statistik, Rundenzähler): Titel 2 s gedrückt halten + PIN. `?demo` = nur lokal im Browser.
+- `memory/`: Luisen Memory, Bilder-Memory mit 4×5 Karten (10 Paare), jede Runde neu aus dem Bilderfundus gemischt. Fotos werden in der App hochgeladen (Supabase-Bucket `memory`, Einrichtung: `supabase/memory.sql`, eigene Memory-PIN) und automatisch auf Gesichter/Motive zugeschnitten. Elternbereich (Fundus, Statistik, Rundenzähler): Titel 2 s gedrückt halten + PIN. Startauswahl: Foto-Memory oder Weihnachts-Memory (20 Emoji-Motive, rote Karten). `?demo` = nur lokal im Browser.
