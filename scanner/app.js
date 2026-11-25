@@ -20,7 +20,7 @@ const cfg = {
   get city() { return store.get('city', ''); },
   get prefer() { return store.get('prefer', ''); },
   get autoDate() { return store.get('autoDate', true); },
-  get filter() { return store.get('filter', 'magic'); },
+  get filter() { return store.get('filter2', 'bw'); },
 };
 
 // ---------- kleine UI-Helfer ----------
@@ -188,11 +188,11 @@ async function openDoc(id) {
 // ---------- Aufnehmen / Importieren ----------
 async function addFromCamera() {
   const files = await pickFiles($('#inCam'));
-  if (files.length) await addFiles(files, true);
+  if (files.length) await addFiles(files, false); // Foto direkt übernehmen, Ecken bei Bedarf über „Zuschneiden“
 }
 async function addFromImport() {
   const files = await pickFiles($('#inImp'));
-  if (files.length) await addFiles(files, files.length === 1);
+  if (files.length) await addFiles(files, false);
 }
 async function addFiles(files, askCrop) {
   if (!doc) { doc = newDoc(); cur = 0; dirty = false; }
@@ -205,6 +205,7 @@ async function addFiles(files, askCrop) {
     const quad = detected || fullQuad(c);
     busy(false);
     let finalQuad = quad, rot = 0;
+    if (!detected && !askCrop) setTimeout(() => toast('Kein Blatt erkannt, ganzes Foto genommen. Über „Zuschneiden“ anpassen.', 4000), 300);
     if (askCrop) {
       const r = await cropUI(c, quad, { detected: !!detected });
       if (!r) { if (!doc.pages.length) { doc = null; show('home'); } else openEdit(); return; }
@@ -873,7 +874,7 @@ $('#setBack').onclick = () => { show('home'); refreshList(); };
 $('#setCity').oninput = e => store.set('city', e.target.value.trim());
 $('#setPrefer').oninput = e => store.set('prefer', e.target.value.trim());
 $('#setAutoDate').onchange = e => store.set('autoDate', e.target.checked);
-$('#setFilter').onchange = e => store.set('filter', e.target.value);
+$('#setFilter').onchange = e => store.set('filter2', e.target.value);
 $('#sigDraw').onclick = async () => { await drawSignature(); openSettings(); };
 $('#sigPhoto').onclick = async () => { await photoSignature(); openSettings(); };
 $('#sigImage').onclick = async () => {
