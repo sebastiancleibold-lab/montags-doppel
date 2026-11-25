@@ -1,4 +1,4 @@
-import { loadImage, detectQuad, warp, rotate, applyFilter, canvasToBlob, makeCanvas, extractSignature, alphaToSignature, FILTERS, orderQuad } from './imgproc.js';
+import { MAX_SIDE, loadImage, detectQuad, warp, rotate, applyFilter, canvasToBlob, makeCanvas, extractSignature, alphaToSignature, FILTERS, orderQuad } from './imgproc.js';
 import { recognize, analyse, buildName, todayIso, findSignatureSpots, placeSignature, boxFor } from './ocr.js';
 import { buildPdf } from './pdf.js';
 import * as db from './db.js';
@@ -187,8 +187,73 @@ async function openDoc(id) {
 
 // ---------- Aufnehmen / Importieren ----------
 async function addFromCamera() {
+  // eigene Kamera in der App: kein „Foto benutzen“-Schritt von iOS
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    const r = await cameraUI();
+    if (r && r.canvas) return addFiles([r.canvas], false);
+    if (r && r.files) { if (r.files.length) await addFiles(r.files, false); else back(); return; }
+    return back();
+  }
   const files = await pickFiles($('#inCam'));
-  if (files.length) await addFiles(files, false); // Foto direkt übernehmen, Ecken bei Bedarf über „Zuschneiden“
+  if (files.length) await addFiles(files, false);
+  function back() { if (doc && doc.pages.length) openEdit(); else { doc = null; show('home'); } }
+}
+
+// Live-Kamera mit Blatterkennung; liefert { canvas } oder { files } (Fotos/Systemkamera) oder null
+function cameraUI() {
+  return new Promise(resolve => {
+    show('camera');
+    const video = $('#camVideo'), svg = $('#camSvg'), stage = $('#camStage');
+    let stream = null, timer = null, done = false;
+    $('#camHint').textContent = 'Kamera wird gestartet…';
+    $('#camShutter').disabled = true;
+    const finish = v => {
+      if (done) return; done = true;
+      clearInterval(timer);
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      video.srcObject = null; svg.innerHTML = '';
+      resolve(v);
+    };
+    navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 4096 }, height: { ideal: 3072 } } })
+      .then(async s => {
+        if (done) { s.getTracks().forEach(t => t.stop()); return; }
+        stream = s; video.srcObject = s;
+        await video.play().catch(() => {});
+        $('#camShutter').disabled = false;
+        $('#camHint').textContent = 'Blatt ins Bild halten und auslösen.';
+        const small = makeCanvas(1, 1);
+        timer = setInterval(() => {
+          if (!video.videoWidth) return;
+          const k = 480 / Math.max(video.videoWidth, video.videoHeight);
+          small.width = Math.round(video.videoWidth * k); small.height = Math.round(video.videoHeight * k);
+          small.getContext('2d').drawImage(video, 0, 0, small.width, small.height);
+          const q = detectQuad(small);
+          const W = stage.clientWidth, H = stage.clientHeight;
+          const sc = Math.min(W / small.width, H / small.height), ox = (W - small.width * sc) / 2, oy = (H - small.height * sc) / 2;
+          svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+          svg.innerHTML = q ? `<polygon points="${q.map(p => (ox + p.x * sc) + ',' + (oy + p.y * sc)).join(' ')}"/>` : '';
+        }, 450);
+      })
+      .catch(() => {
+        $('#camHint').textContent = 'Kein Zugriff auf die Kamera. Bitte „Systemkamera“ oder „Fotos“ nutzen, oder den Kamerazugriff in den Einstellungen erlauben.';
+        $('#camSys').classList.remove('hidden');
+      });
+    $('#camShutter').onclick = () => {
+      if (!video.videoWidth) return;
+      const k = Math.min(1, MAX_SIDE / Math.max(video.videoWidth, video.videoHeight));
+      const c = makeCanvas(video.videoWidth * k, video.videoHeight * k);
+      const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+      g.drawImage(video, 0, 0, c.width, c.height);
+      finish({ canvas: c });
+    };
+    $('#camCancel').onclick = () => finish(null);
+    $('#camPhotos').onclick = () => { const p = pickFiles($('#inImp')); finish({ filesP: p }); };
+    $('#camSys').onclick = () => { const p = pickFiles($('#inCam')); finish({ filesP: p }); };
+  }).then(async v => {
+    if (!(v && v.filesP)) return v;
+    if (doc && doc.pages.length) openEdit(); else show('home'); // während der Dateiauswahl nicht im Kamerabild hängen bleiben
+    return { files: await v.filesP };
+  });
 }
 async function addFromImport() {
   const files = await pickFiles($('#inImp'));
@@ -200,7 +265,7 @@ async function addFiles(files, askCrop) {
     busy(files.length > 1 ? `Seite ${i + 1} von ${files.length} wird erkannt…` : 'Blatt wird erkannt…');
     await nextFrame();
     let c;
-    try { c = await loadImage(files[i]); } catch { busy(false); toast('Bild konnte nicht geöffnet werden'); continue; }
+    try { c = files[i] instanceof HTMLCanvasElement ? files[i] : await loadImage(files[i]); } catch { busy(false); toast('Bild konnte nicht geöffnet werden'); continue; }
     const detected = detectQuad(c);
     const quad = detected || fullQuad(c);
     busy(false);
