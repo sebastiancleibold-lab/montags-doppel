@@ -131,14 +131,48 @@ h1 { -webkit-touch-callout: none; }
 .zoom { width: 100%; margin-top: 14px; accent-color: var(--accent); }
 .linkish { color: var(--muted); font-size: 14px; margin-top: 10px; text-decoration: underline; }
 .danger { color: #c43d3d; }
+
+/* ---------- Startauswahl ---------- */
+#start { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: calc(var(--st) + 20px) 16px calc(var(--sb) + 24px); text-align: center; }
+.st-title { font-size: clamp(32px, min(9vw, 6vh), 60px) !important; }
+.st-sub { color: var(--muted); margin: 4px 0 18px; font-size: clamp(17px, 2.4vmin, 24px); }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(14px, 3vmin, 32px); width: min(100%, 720px); }
+.choice { aspect-ratio: 1; border-radius: 26px; position: relative; overflow: hidden; display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end; padding: 0 0 6%; box-shadow: 0 7px 0 var(--card-edge); background: var(--card); color: #fff; }
+.choice:active { transform: translateY(4px); box-shadow: 0 3px 0 var(--card-edge); }
+.choice b { position: relative; font: italic 700 clamp(24px, 5vmin, 44px)/1 var(--serif); text-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.choice.xmas { background: radial-gradient(circle at 50% 35%, #c8323f, #8e1b26); box-shadow: 0 7px 0 #5e1018; }
+.choice .big { position: absolute; inset: 0 0 18%; display: grid; place-items: center; font-size: clamp(90px, 22vmin, 220px); line-height: 1; }
+.choice .snow { position: absolute; inset: 0; background-image: radial-gradient(#fff 1.2px, transparent 1.6px), radial-gradient(rgba(255,255,255,.7) 1px, transparent 1.4px);
+  background-size: 34px 34px, 21px 21px; background-position: 0 0, 11px 7px; opacity: .35; pointer-events: none; }
+.collage { position: absolute; inset: 9% 9% 22%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.collage i { border-radius: 10px; background-color: rgba(255,255,255,.15); background-repeat: no-repeat; }
+/* Weihnachts-Modus: rote Karten */
+body.xmas { --card: #b3262f; --card-edge: #6e121a; }
+body.xmas .back { background-image: radial-gradient(circle at 30% 20%, rgba(255,255,255,.16), transparent 60%),
+  radial-gradient(rgba(255,255,255,.55) 1px, transparent 1.5px); background-size: auto, 14px 14px; }
+body.xmas .back b { color: #ffe9a8; }
 </style>
 </head>
 <body>
 
-<main id="game">
+<section id="start">
+  <h1 class="st-title">Luisen Memory</h1>
+  <p class="st-sub">Was möchtest du spielen?</p>
+  <div class="choices">
+    <button class="choice foto" data-mode="foto"><span class="collage" id="collage"></span><b>Fotos</b></button>
+    <button class="choice xmas" data-mode="xmas"><span class="big">🎄</span><span class="snow"></span><b>Weihnachten</b></button>
+  </div>
+</section>
+
+<main id="game" class="hidden">
   <header>
     <h1><span id="roundLabel">Runde 1</span>Luisen Memory</h1>
     <div class="tools">
+      <button class="round-btn" id="btnHome" aria-label="Spiel auswählen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+      </button>
       <button class="round-btn accent" id="btnNew" aria-label="Neues Spiel">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
       </button>

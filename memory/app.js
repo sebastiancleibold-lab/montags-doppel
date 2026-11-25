@@ -232,7 +232,33 @@ async function prepare(file){
 let BILDER = [];          // eigener Fundus
 let G = null;             // laufendes Spiel
 
+/* ---------- Weihnachts-Motive ---------- */
+const XMAS = [['🎄','#1f6b45'],['🎁','#f3e3c3'],['🎅','#2c5d8f'],['⛄️','#2f4f7f'],['🦌','#e7d3b0'],['🔔','#1f6b45'],['⭐️','#1d2b55'],['🕯️','#5a2333'],
+  ['🍪','#cfe5f2'],['🧦','#f1e6cf'],['🛷','#cde4ef'],['❄️','#244a78'],['🎀','#e8f1e4'],['🍭','#fbe7c6'],['👼','#c9ddf0'],['🧣','#efe2c8'],['🧤','#d7e8d0'],['🍊','#22573c'],['🌰','#f4e6cf'],['🏠','#1b2c4f']];
+let XM = null;
+function xmasTiles(){
+  if(XM) return XM;
+  XM = XMAS.map(([e, col], i) => {
+    const c = document.createElement('canvas'); c.width = c.height = 300;
+    const g = c.getContext('2d');
+    g.fillStyle = col; g.fillRect(0, 0, 300, 300);
+    // ein paar Schneeflocken-Punkte
+    g.fillStyle = 'rgba(255,255,255,.35)';
+    for(let k = 0; k < 26; k++){ const x = (k * 97 + i * 31) % 300, y = (k * 53 + i * 71) % 300; g.beginPath(); g.arc(x, y, 2 + (k % 3), 0, 7); g.fill(); }
+    g.font = '200px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    g.fillStyle = '#000'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(e, 150, 166);
+    const u = c.toDataURL('image/png');
+    return {id: 'xm' + i, src: u, thumb: u, w: 300, h: 300, cx: .5, cy: .5, sz: 1};
+  });
+  return XM;
+}
+
+let MODE = 'foto';
 function pickRound(){
+  if(MODE === 'xmas'){
+    const hist = store.get('hist', {});
+    return xmasTiles().slice().sort((a, b) => ((hist[a.id] ?? -1) + Math.random() * .9) - ((hist[b.id] ?? -1) + Math.random() * .9)).slice(0, PAIRS);
+  }
   const own = BILDER.slice();
   const hist = store.get('hist', {});
   // am längsten nicht gezeigte Bilder zuerst, innerhalb gleicher Runde zufällig
@@ -451,21 +477,42 @@ $('#board').addEventListener('click', e => { const c = e.target.closest('.card')
 $('#btnNew').onclick = newGame;
 // Elternbereich: Titel 2 Sekunden gedrückt halten, dann PIN.
 (() => {
-  const h = $('h1'); let t = null;
+  let t = null;
   const stop = () => { clearTimeout(t); t = null; };
-  h.addEventListener('pointerdown', () => { stop(); t = setTimeout(() => { stop(); openFundus(); }, 2000); });
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => h.addEventListener(ev, stop));
-  h.addEventListener('contextmenu', e => e.preventDefault());
+  document.querySelectorAll('h1').forEach(h => {
+    h.addEventListener('pointerdown', () => { stop(); t = setTimeout(() => { stop(); openFundus(); }, 2000); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => h.addEventListener(ev, stop));
+    h.addEventListener('contextmenu', e => e.preventDefault());
+  });
 })();
 $('#btnBack').onclick = () => {
   $('#fundus').classList.add('hidden'); SESSION_PIN = '';
+  if(!$('#start').classList.contains('hidden')){ renderCollage(); NEED_NEW = false; return; }
   if(NEED_NEW || !G || !G.tries || G.finished) newGame();
   NEED_NEW = false;
 };
 
+/* ---------- Startauswahl ---------- */
+function renderCollage(){
+  const src = (BILDER.length ? BILDER : placeholders()).slice().sort(() => Math.random() - .5).slice(0, 4);
+  $('#collage').innerHTML = src.map(b => `<i style='${cropStyle(b, b.thumb)}'></i>`).join('');
+}
+function showStart(){
+  $('#game').classList.add('hidden'); $('#start').classList.remove('hidden');
+  document.body.classList.remove('xmas'); modal(''); renderCollage();
+}
+function play(mode){
+  MODE = mode; store.set('mode', mode);
+  document.body.classList.toggle('xmas', mode === 'xmas');
+  $('#start').classList.add('hidden'); $('#game').classList.remove('hidden');
+  newGame();
+}
+$('#start').addEventListener('click', e => { const m = e.target.closest('[data-mode]')?.dataset.mode; if(m) play(m); });
+$('#btnHome').onclick = showStart;
+
 (async function start(){
   if(LIVE) BILDER = store.get('cache', []);
-  try{ BILDER = await API.list(); }catch(e){ console.warn(e); }
-  newGame();
+  renderCollage();
+  try{ BILDER = await API.list(); renderCollage(); }catch(e){ console.warn(e); }
   if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
