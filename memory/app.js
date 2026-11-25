@@ -287,6 +287,7 @@ function tap(i){
   if(G.deck[a].id === G.deck[b].id){
     G.done.add(a); G.done.add(b); G.pairs++; G.open = [];
     [a, b].forEach(k => { const el = cardEl(k); el.classList.remove('open'); el.classList.add('done', 'pop'); });
+    setTimeout(() => [a, b].forEach(k => cardEl(k)?.classList.add('gone')), 900);   // gefundenes Paar ausblenden, Lücke bleibt
     if(navigator.vibrate) navigator.vibrate(15);
     if(G.pairs === PAIRS){ G.finished = true; setTimeout(win, 750); }
   } else {
