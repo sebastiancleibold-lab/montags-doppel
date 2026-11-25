@@ -1,5 +1,5 @@
 'use strict';
-/* Luises Memory: 4×5 Karten, 10 Paare, jede Runde neu aus dem Bilderfundus gemischt. */
+/* Luisen Memory: 4×5 Karten, 10 Paare, jede Runde neu aus dem Bilderfundus gemischt. */
 
 const CFG = window.MEMORY_CONFIG || {};
 const LIVE = !!(CFG.supabaseUrl && CFG.supabaseKey) && !/[?&]demo/.test(location.search);
