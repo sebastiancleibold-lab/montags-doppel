@@ -1,9 +1,9 @@
--- Louises Memory: Bilderfundus in Supabase (Stand 25.11.2026).
+-- Luises Memory: Bilderfundus in Supabase (Stand 25.11.2026).
 -- In Supabase: SQL Editor -> + New -> alles einfügen -> Run. Kann gefahrlos mehrfach ausgeführt werden.
 --
 -- Bilder liegen im Storage-Bucket "memory" (öffentlich lesbar über nicht erratbare Links).
 -- Hochladen, Zuschnitt ändern und Löschen geht nur mit der Memory-PIN (eigene PIN, nicht die Tennis-PIN).
--- PIN ändern: unten bei 'louise' eintragen und erneut ausführen, oder später:
+-- PIN ändern: unten bei 'luise' eintragen und erneut ausführen, oder später:
 --   update public.memory_secret set pin = 'neue-pin' where id = 1;
 
 -- 1) PIN
@@ -13,7 +13,7 @@ create table if not exists public.memory_secret (
 );
 alter table public.memory_secret enable row level security;
 revoke all on public.memory_secret from anon, authenticated;
-insert into public.memory_secret (id, pin) values (1, 'louise') on conflict (id) do nothing;
+insert into public.memory_secret (id, pin) values (1, 'luise') on conflict (id) do nothing;
 
 create or replace function public.mem_pin_ok(p_pin text) returns boolean
 language sql stable security definer set search_path = public as $$

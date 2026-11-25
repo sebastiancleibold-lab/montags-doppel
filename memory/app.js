@@ -1,5 +1,5 @@
 'use strict';
-/* Louises Memory: 4×5 Karten, 10 Paare, jede Runde neu aus dem Bilderfundus gemischt. */
+/* Luises Memory: 4×5 Karten, 10 Paare, jede Runde neu aus dem Bilderfundus gemischt. */
 
 const CFG = window.MEMORY_CONFIG || {};
 const LIVE = !!(CFG.supabaseUrl && CFG.supabaseKey) && !/[?&]demo/.test(location.search);
@@ -72,13 +72,13 @@ const Live = {
   }
 };
 
-// Demo: Bilder nur in diesem Browser (IndexedDB). PIN: louise
+// Demo: Bilder nur in diesem Browser (IndexedDB). PIN: luise
 const Demo = {
   _db: null, _urls: {},
   db(){
     if(this._db) return this._db;
     return this._db = new Promise((res, rej) => {
-      const r = indexedDB.open('louises-memory-demo', 1);
+      const r = indexedDB.open('luises-memory-demo', 1);
       r.onupgradeneeded = () => r.result.createObjectStore('bilder', {keyPath: 'id'});
       r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
     });
@@ -96,7 +96,7 @@ const Demo = {
     const rows = await this.tx('readonly', s => s.getAll());
     return rows.sort((a, b) => a.created - b.created).map(r => ({id: r.id, src: this.url(r.id, 's', r.src), thumb: this.url(r.id, 't', r.thumb), w: r.w, h: r.h, cx: r.cx, cy: r.cy, sz: r.sz}));
   },
-  async checkPin(pin){ return String(pin).trim().toLowerCase() === 'louise'; },
+  async checkPin(pin){ return String(pin).trim().toLowerCase() === 'luise'; },
   async add(p){ const id = Math.random().toString(36).slice(2, 12); await this.tx('readwrite', s => s.put({...p, id, created: Date.now()})); },
   async focus(id, f){ const r = await this.tx('readonly', s => s.get(id)); if(r) await this.tx('readwrite', s => s.put({...r, ...f})); },
   async remove(id){ await this.tx('readwrite', s => s.delete(id)); }
@@ -259,7 +259,7 @@ function newGame(){
 function renderBoard(){
   $('#roundLabel').textContent = 'Runde ' + G.round;
   $('#board').innerHTML = G.deck.map((b, i) =>
-    `<button class="card" data-i="${i}" aria-label="Karte ${i + 1}"><div class="inner"><div class="face back"><b>Louise</b></div><div class="face front" style='${cropStyle(b, b.src)}'></div></div></button>`).join('');
+    `<button class="card" data-i="${i}" aria-label="Karte ${i + 1}"><div class="inner"><div class="face back"><b>Luise</b></div><div class="face front" style='${cropStyle(b, b.src)}'></div></div></button>`).join('');
   updateScore();
   const own = BILDER.length;
   $('#hint').innerHTML = own >= PAIRS ? '' : own === 0
@@ -330,7 +330,7 @@ function askPin(){
   const saved = store.get('pin', '');
   if(saved) return Promise.resolve(saved);
   return new Promise(resolve => {
-    modal(`<div class="dialog"><h2>PIN</h2><p>Zum Hinzufügen und Ändern von Bildern brauchst du die Memory-PIN.${LIVE ? '' : ' (Demo: louise)'}</p>
+    modal(`<div class="dialog"><h2>PIN</h2><p>Zum Hinzufügen und Ändern von Bildern brauchst du die Memory-PIN.${LIVE ? '' : ' (Demo: luise)'}</p>
       <input id="pinIn" type="password" autocomplete="off" autocapitalize="off" enterkeyhint="done"><div class="err" id="pinErr"></div>
       <div class="row"><button class="pill" id="pinNo">Abbrechen</button><button class="pill primary" id="pinOk">OK</button></div></div>`);
     const inp = $('#pinIn'); setTimeout(() => inp.focus(), 50);
