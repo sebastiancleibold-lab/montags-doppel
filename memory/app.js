@@ -246,7 +246,10 @@ function pickRound(){
 }
 
 function newGame(){
-  const round = store.get('round', 0) + 1; store.set('round', round);
+  // Rundenzähler: beginnt jeden Tag bei 1; ein ungespieltes Spiel (z. B. App neu geöffnet) zählt nicht.
+  const today = new Date().toDateString(), r = store.get('rnd', {day: '', n: 0, used: false});
+  const round = r.day !== today ? 1 : r.used ? r.n + 1 : Math.max(1, r.n);
+  store.set('rnd', {day: today, n: round, used: false});
   const pick = pickRound();
   const hist = store.get('hist', {}); pick.forEach(b => hist[b.id] = round); store.set('hist', hist);
   pick.forEach(b => { const i = new Image(); i.src = b.src; });   // vorladen
@@ -261,10 +264,6 @@ function renderBoard(){
   $('#board').innerHTML = G.deck.map((b, i) =>
     `<button class="card" data-i="${i}" aria-label="Karte ${i + 1}"><div class="inner"><div class="face back"><b>Luise</b></div><div class="face front" style='${cropStyle(b, b.src)}'></div></div></button>`).join('');
   updateScore();
-  const own = BILDER.length;
-  $('#hint').innerHTML = own >= PAIRS ? '' : own === 0
-    ? `Noch keine eigenen Fotos, gespielt wird mit Platzhaltern. <button data-act="fundus">Fotos hinzufügen</button>`
-    : `Erst ${own} eigene Fotos, der Rest sind Platzhalter. Ab 10 Fotos nur eigene Bilder, ab 50 viel Abwechslung. <button data-act="fundus">Fotos hinzufügen</button>`;
 }
 function updateScore(){
   $('#tries').textContent = G.tries;
@@ -280,6 +279,7 @@ function closeOpen(){
 function tap(i){
   if(!G || G.finished || G.done.has(i) || G.open.includes(i)) return;
   if(G.open.length === 2) closeOpen();          // nach Fehlversuch sofort weiterspielen
+  if(!G.tries && !G.open.length) store.set('rnd', {...store.get('rnd', {}), used: true});
   G.open.push(i); cardEl(i).classList.add('open');
   if(G.open.length < 2) return;
   G.tries++;
@@ -301,20 +301,24 @@ function win(){
   const isBest = st.best == null || G.tries < st.best;
   st.played++; st.sum += G.tries; if(isBest) st.best = G.tries; store.set('stats', st);
   const lob = G.tries <= 13 ? 'Wahnsinn!' : G.tries <= 17 ? 'Super gemacht!' : G.tries <= 22 ? 'Geschafft!' : 'Alle gefunden!';
-  modal(`<div class="dialog"><h2>${lob}</h2><p>Alle 10 Paare gefunden in</p><div class="big">${G.tries}</div><p>Versuchen${isBest && st.played > 1 ? ' · neuer Bestwert!' : ''}</p>
-    <p style="font-size:14px">Bestwert ${st.best} · Schnitt ${(st.sum / st.played).toFixed(1)} · ${st.played} ${st.played === 1 ? 'Runde' : 'Runden'}</p>
+  modal(`<div class="dialog"><h2>${lob}</h2><p>Alle 10 Paare gefunden in</p><div class="big">${G.tries}</div><p>Versuchen${isBest && st.played > 1 ? ' · neuer Rekord!' : ''}</p>
     <div class="row"><button class="pill primary" data-act="next">Nächste Runde</button></div></div>`);
 }
-function showStats(){
-  const st = store.get('stats', {played: 0, sum: 0, best: null});
-  modal(`<div class="dialog"><h2>Statistik</h2>
-    <p>Gespielte Runden: <b>${st.played}</b></p>
-    <p>Bestwert: <b>${st.best ?? '–'}</b> Versuche</p>
-    <p>Durchschnitt: <b>${st.played ? (st.sum / st.played).toFixed(1) : '–'}</b> Versuche</p>
-    <p>Bilder im Fundus: <b>${BILDER.length}</b> (reicht für ${Math.max(1, Math.floor(BILDER.length / PAIRS))} ${BILDER.length >= 20 ? 'Runden' : 'Runde'} ohne Wiederholung)</p>
-    <div class="row"><button class="pill" data-act="close">Schließen</button></div>
-    <button class="linkish" data-act="resetStats">Statistik zurücksetzen</button></div>`);
+function renderParentStats(){
+  const st = store.get('stats', {played: 0, sum: 0, best: null}), r = store.get('rnd', {n: 0});
+  $('#pstats').innerHTML = `<div class="grid">
+      <div><b>${st.played}</b><small>Runden</small></div>
+      <div><b>${st.best ?? '–'}</b><small>Bestwert</small></div>
+      <div><b>${st.played ? (st.sum / st.played).toFixed(1) : '–'}</b><small>Schnitt</small></div>
+      <div><b>${r.n || 0}</b><small>Runde heute</small></div></div>
+    <div class="acts"><button data-p="resetRound">Rundenzähler auf 1</button><button data-p="resetStats">Statistik löschen</button></div>`;
 }
+$('#pstats').addEventListener('click', e => {
+  const a = e.target.closest('[data-p]')?.dataset.p;
+  if(a === 'resetRound'){ store.set('rnd', {day: new Date().toDateString(), n: 0, used: true}); NEED_NEW = true; }
+  if(a === 'resetStats') store.set('stats', {played: 0, sum: 0, best: null});
+  renderParentStats();
+});
 
 /* ================= Modal ================= */
 function modal(html){ $('#modal').innerHTML = html ? `<div class="overlay">${html}</div>` : ''; }
@@ -323,21 +327,20 @@ $('#modal').addEventListener('click', e => {
   if(e.target.classList.contains('overlay') && !G?.finished) return modal('');
   if(act === 'close') modal('');
   if(act === 'next'){ modal(''); newGame(); }
-  if(act === 'resetStats'){ store.set('stats', {played: 0, sum: 0, best: null}); showStats(); }
 });
 
+let SESSION_PIN = '';
 function askPin(){
-  const saved = store.get('pin', '');
-  if(saved) return Promise.resolve(saved);
+  if(SESSION_PIN) return Promise.resolve(SESSION_PIN);
   return new Promise(resolve => {
-    modal(`<div class="dialog"><h2>PIN</h2><p>Zum Hinzufügen und Ändern von Bildern brauchst du die Memory-PIN.${LIVE ? '' : ' (Demo: luise)'}</p>
+    modal(`<div class="dialog"><h2>Elternbereich</h2><p>Bitte die Memory-PIN eingeben.${LIVE ? '' : ' (Demo: luise)'}</p>
       <input id="pinIn" type="password" autocomplete="off" autocapitalize="off" enterkeyhint="done"><div class="err" id="pinErr"></div>
       <div class="row"><button class="pill" id="pinNo">Abbrechen</button><button class="pill primary" id="pinOk">OK</button></div></div>`);
     const inp = $('#pinIn'); setTimeout(() => inp.focus(), 50);
     const ok = async () => {
       const p = inp.value.trim(); if(!p) return;
       try{
-        if(await API.checkPin(p)){ store.set('pin', p); modal(''); resolve(p); }
+        if(await API.checkPin(p)){ SESSION_PIN = p; modal(''); resolve(p); }
         else { $('#pinErr').textContent = 'Falsche PIN'; inp.select(); }
       }catch(e){ $('#pinErr').textContent = e.message; }
     };
@@ -345,22 +348,24 @@ function askPin(){
     $('#pinNo').onclick = () => { modal(''); resolve(null); };
   });
 }
-function pinFailed(e){ if(/PIN/.test(e.message)) store.set('pin', ''); }
+function pinFailed(e){ if(/PIN/.test(e.message)) SESSION_PIN = ''; }
 
 /* ================= Fundus ================= */
 function renderFundus(){
   $('#fcount').textContent = BILDER.length === 1 ? '1 Bild' : BILDER.length + ' Bilder' + (BILDER.length < 50 ? ' · Ziel: 50 bis 100' : '');
   $('#thumbs').innerHTML = BILDER.slice().reverse().map(b => `<button class="thumb" data-id="${esc(b.id)}" style='${cropStyle(b, b.thumb)}' aria-label="Bild bearbeiten"></button>`).join('');
 }
+let NEED_NEW = false;
 async function openFundus(){
+  if(!(await askPin())) return;
   $('#fundus').classList.remove('hidden');
-  renderFundus();
+  renderFundus(); renderParentStats();
   try{ BILDER = await API.list(); renderFundus(); }catch(e){ $('#fnote').textContent = e.message; }
 }
 $('#fileIn').addEventListener('change', async e => {
   const files = [...e.target.files]; e.target.value = '';
   if(!files.length) return;
-  const pin = await askPin(); if(!pin) return;
+  const pin = SESSION_PIN; if(!pin) return;
   const box = $('#upProg'), bar = $('#upBar'), txt = $('#upText');
   box.classList.remove('hidden'); $('#addLabel').classList.add('hidden');
   let ok = 0, fail = 0, lastErr = '';
@@ -384,7 +389,7 @@ $('#thumbs').addEventListener('click', e => {
 
 /* ---------- Ausschnitt anpassen ---------- */
 async function openCrop(b){
-  const pin = await askPin(); if(!pin) return;
+  const pin = SESSION_PIN; if(!pin) return;
   modal(`<div class="dialog" id="crop"><h2>Ausschnitt</h2><p>Verschieben mit dem Finger, zoomen mit zwei Fingern oder dem Regler.</p>
     <div class="cropbox" id="cbox"><canvas id="ccan"></canvas></div>
     <input type="range" class="zoom" id="czoom" min="1" max="3" step="0.01">
@@ -443,10 +448,19 @@ async function openCrop(b){
 /* ================= Start ================= */
 $('#board').addEventListener('click', e => { const c = e.target.closest('.card'); if(c) tap(+c.dataset.i); });
 $('#btnNew').onclick = newGame;
-$('#btnStats').onclick = showStats;
-$('#btnFundus').onclick = openFundus;
-$('#hint').addEventListener('click', e => { if(e.target.closest('[data-act="fundus"]')) openFundus(); });
-$('#btnBack').onclick = () => { $('#fundus').classList.add('hidden'); if(!G || !G.tries || G.finished) newGame(); };
+// Elternbereich: Titel 2 Sekunden gedrückt halten, dann PIN.
+(() => {
+  const h = $('h1'); let t = null;
+  const stop = () => { clearTimeout(t); t = null; };
+  h.addEventListener('pointerdown', () => { stop(); t = setTimeout(() => { stop(); openFundus(); }, 2000); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => h.addEventListener(ev, stop));
+  h.addEventListener('contextmenu', e => e.preventDefault());
+})();
+$('#btnBack').onclick = () => {
+  $('#fundus').classList.add('hidden'); SESSION_PIN = '';
+  if(NEED_NEW || !G || !G.tries || G.finished) newGame();
+  NEED_NEW = false;
+};
 
 (async function start(){
   if(LIVE) BILDER = store.get('cache', []);
